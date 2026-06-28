@@ -148,11 +148,11 @@ hr {
         </div>
         
       <div class"footer">
-          <a href="https://accountill.com">
+          <a href="https://alhudatextiles.com">
           <img class="footer-logo" src="https://i.postimg.cc/hGZKzdkS/logo.png" alt="arc-invoice"/>
         </a>
       </div>
-    <p style="text-align: center">Make beautiful invoice for free at accountill.com</p>
+    <p style="text-align: center">Make beautiful invoice for free at alhudatextiles.com</p>
     </div>
     </body>
 </html>`

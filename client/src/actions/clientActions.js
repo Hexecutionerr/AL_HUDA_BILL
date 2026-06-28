@@ -35,6 +35,7 @@ export const createClient =(client, openSnackbar) => async (dispatch) => {
         const { data } = await api.addClient(client)
         dispatch({ type: ADD_NEW_CLIENT, payload: data })
         openSnackbar("Customer added successfully")
+        return data
 
     } catch (error) {
         console.log(error)

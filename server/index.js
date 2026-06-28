@@ -1,5 +1,4 @@
-
-//Copyright (c) 2022 Panshak Solomon
+//Copyright (c) 2026 Hasnain Khan
 
 import express from 'express'
 import cors from 'cors'
@@ -53,27 +52,39 @@ var options = { format: 'A4' };
 app.post('/send-pdf', (req, res) => {
     const { email, company } = req.body
 
-    // pdf.create(pdfTemplate(req.body), {}).toFile('invoice.pdf', (err) => {
-    pdf.create(pdfTemplate(req.body), options).toFile('invoice.pdf', (err) => {
+    let htmlContent;
+    try {
+        htmlContent = pdfTemplate(req.body);
+    } catch(templateErr) {
+        console.error('PDF template error:', templateErr);
+        return res.status(500).json({ error: 'Template error: ' + templateErr.message });
+    }
+
+    pdf.create(htmlContent, options).toFile('invoice.pdf', (err) => {
+        if(err) {
+            console.error('PDF creation error:', err);
+            return res.status(500).json({ error: err.message });
+        }
        
-          // send mail with defined transport object
+        // send mail with defined transport object and callback to prevent unhandled rejection crashes
         transporter.sendMail({
-            from: ` Accountill <hello@accountill.com>`, // sender address
+            from: ` AL Huda Textiles <alhudatextiless@gmail.com>`, // sender address
             to: `${email}`, // list of receivers
-            replyTo: `${company.email}`,
-            subject: `Invoice from ${company.businessName ? company.businessName : company.name}`, // Subject line
-            text: `Invoice from ${company.businessName ? company.businessName : company.name }`, // plain text body
+            replyTo: `${company?.email || ''}`,
+            subject: `Invoice from ${company?.businessName ? company.businessName : (company?.name || '')}`, // Subject line
+            text: `Invoice from ${company?.businessName ? company.businessName : (company?.name || '')}`, // plain text body
             html: emailTemplate(req.body), // html body
             attachments: [{
                 filename: 'invoice.pdf',
                 path: `${__dirname}/invoice.pdf`
             }]
+        }, (mailErr, info) => {
+            if (mailErr) {
+                console.error("Mail send error:", mailErr);
+                return res.status(500).json({ error: "Failed to send email: " + mailErr.message });
+            }
+            res.json({ success: true });
         });
-
-        if(err) {
-            res.send(Promise.reject());
-        }
-        res.send(Promise.resolve());
     });
 });
 
@@ -85,11 +96,41 @@ app.post('/send-pdf', (req, res) => {
 
 //CREATE AND SEND PDF INVOICE
 app.post('/create-pdf', (req, res) => {
-    pdf.create(pdfTemplate(req.body), {}).toFile('invoice.pdf', (err) => {
+    let htmlContent;
+    try {
+        htmlContent = pdfTemplate(req.body);
+    } catch(templateErr) {
+        console.error('PDF template error:', templateErr);
+        return res.status(500).json({ error: 'Template error: ' + templateErr.message });
+    }
+    pdf.create(htmlContent, { format: 'A4' }).toFile('invoice.pdf', (err) => {
         if(err) {
-            res.send(Promise.reject());
+            console.error('PDF creation error:', err);
+            return res.status(500).json({ error: err.message });
         }
-        res.send(Promise.resolve());
+        res.json({ success: true });
+    });
+});
+
+// DOWNLOAD PDF IN ONE REQUEST (avoids UUID filename issue in Chrome)
+app.post('/download-pdf', (req, res) => {
+    let htmlContent;
+    try {
+        htmlContent = pdfTemplate(req.body);
+    } catch(templateErr) {
+        console.error('PDF template error:', templateErr);
+        return res.status(500).json({ error: 'Template error: ' + templateErr.message });
+    }
+    const filename = req.body.id ? `invoice_${req.body.id}.pdf` : 'invoice.pdf';
+    pdf.create(htmlContent, { format: 'A4' }).toBuffer((err, buffer) => {
+        if(err) {
+            console.error('PDF buffer error:', err);
+            return res.status(500).json({ error: err.message });
+        }
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Length', buffer.length);
+        res.send(buffer);
     });
 });
 
@@ -97,6 +138,7 @@ app.post('/create-pdf', (req, res) => {
 app.get('/fetch-pdf', (req, res) => {
      res.sendFile(`${__dirname}/invoice.pdf`)
 })
+
 
 
 app.get('/', (req, res) => {

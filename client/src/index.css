@@ -175,16 +175,17 @@ p {
 
 
 main {
-  margin-left: 5rem;
+  margin-left: 0;
   padding: 1rem;
 }
 
 .navbar {
   position: fixed;
   background-color: var(--bg-primary);
-  transition: width 600ms ease;
-  overflow: scroll;
-  z-index: 100;
+  transition: width 300ms ease;
+  overflow: hidden;
+  z-index: 1000;
+  width: 0;          /* hidden by default */
 }
 
 
@@ -322,25 +323,25 @@ main {
 @media only screen and (min-width: 600px) {
   .navbar {
     top: 0;
-    width: 5rem;
+    width: 0;           /* fully hidden when not hovered */
     height: 100vh;
+    overflow: hidden;
   }
 
   .navbar:hover {
-    width: 16rem;
+    width: 16rem;       /* slides in on hover */
+    overflow: visible;
   }
 
   .navbar:hover .link-text {
     display: inline;
   }
 
-  .navbar:hover .logo svg
-  {
+  .navbar:hover .logo svg {
     margin-left: 11rem;
   }
 
-  .navbar:hover .logo-text
-  {
+  .navbar:hover .logo-text {
     left: 0px;
   }
 }

@@ -7,8 +7,7 @@ function Chart({ paymentHistory }) {
     let paymentDates = []
     for(let i = 0; i < paymentHistory.length; i++) {
       const newDate = new Date(paymentHistory[i].datePaid);
-      let localDate = newDate.toLocaleDateString();
-            paymentDates = [...paymentDates, localDate]
+      paymentDates = [...paymentDates, newDate.toISOString()]
     }
 
 

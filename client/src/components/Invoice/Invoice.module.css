@@ -1,289 +1,507 @@
-.header {
+/* Premium GEMS E-Billing Styles */
+
+.pageContainer {
+  background-color: #FAFAFA;
+  min-height: 100vh;
+  padding: 40px 24px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #0F172A;
+}
+
+.invoiceGrid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .invoiceGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  background: #FFFFFF;
+  border-radius: 20px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+  border: 1px solid #F1F5F9;
+  padding: 32px;
+  margin-bottom: 24px;
+}
+
+.sidebarCard {
+  background: #FFFFFF;
+  border-radius: 20px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+  border: 1px solid #F1F5F9;
+  padding: 20px;
+  position: sticky;
+  top: 40px;
+}
+
+/* Top Header Section */
+.invoiceHeaderRow {
   display: flex;
-  padding: 50px;
   justify-content: space-between;
-}
-.logo {
-  width: 70px;
-  height: 70px;
-}
-
-.invoiceNumber {
-  text-align: right;
-  border: none;
-  outline: none;
-  font-size: 15px;
-  color: gray;
+  align-items: center;
+  margin-bottom: 40px;
+  border-bottom: 2px solid #F1F5F9;
+  padding-bottom: 20px;
 }
 
-.invoiceLayout {
-  width: 63%;
-  min-height: 500px;
-  background-color: white;
-  margin: 100px auto;
-  border-radius: 10px;
-  /* border: solid 1px rgb(236, 236, 236); */
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
-
-  /* box-shadow: 0 2.8px 2.2px rgba(0, 0, 0, 0.02),
-    0 6.7px 5.3px rgba(0, 0, 0, 0.028), 0 12.5px 10px rgba(0, 0, 0, 0.035),
-    0 22.3px 17.9px rgba(0, 0, 0, 0.042), 0 41.8px 33.4px rgba(0, 0, 0, 0.05),
-    0 100px 80px rgba(0, 0, 0, 0.07); */
-}
-
-.contacts {
+.headerLogoLeft {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 10px 40px;
-  border-top: 1px rgb(221, 221, 221) solid;
 }
 
-.contacts p {
-  font-size: 14px;
-  color: gray;
-  line-height: 8px;
+.alHudaLogo {
+  max-height: 80px;
+  max-width: 180px;
+  object-fit: contain;
 }
 
-.contacts h4 {
-  font-size: 15px;
-  font-family: "Roboto", Tahoma, Geneva, Verdana, sans-serif;
-  color: gray;
-}
-
-.address {
-  text-align: left;
-}
-
-.dates {
+.headerTitleRight {
   text-align: right;
 }
 
-form {
-  padding: 0 40px 40px 40px !important;
+.invoiceTitleRight {
+  font-family: 'Playfair Display', 'Didot', 'Georgia', serif;
+  font-size: 42px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  color: #0F172A;
+  margin: 0;
+  text-transform: uppercase;
 }
 
-/* TABLE STYLING */
-table {
-  font-family: Roboto, Helvetica, sans-serif;
-  border-collapse: collapse;
-  width: 100%;
+/* Details Row */
+.detailsRow {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 40px;
+  margin-bottom: 40px;
+  padding-bottom: 30px;
+  border-bottom: 1px solid #F1F5F9;
 }
 
-table td,
-table th {
-  border-bottom: 1px solid #ddd;
-  padding: 8px 0px;
+.billedToCol {
+  display: flex;
+  flex-direction: column;
 }
 
-table tr:nth-child(even) {
-  background-color: #fafafa;
+.metaCol {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
 }
 
-table tr:hover {
-  background-color: rgb(243, 243, 243);
-}
-
-thead {
-  padding-left: 100px;
-}
-
-table th {
-  padding-top: 12px;
-  padding-bottom: 12px;
-  text-align: left;
-  background-color: #f5f5f5;
-  color: rgb(59, 59, 59);
-  border-top: 1px rgb(212, 212, 212) solid;
-  border-bottom: 1px rgb(212, 212, 212) solid;
+.metaRowItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 14px;
 }
 
-tr input[type="text"] {
+.metaLabel {
+  color: #64748B;
+  font-weight: 500;
+}
+
+.metaValue {
+  color: #0F172A;
+  font-weight: 600;
+}
+
+.metaValueInput {
+  border: none;
   background: transparent;
-  -moz-appearance: textfield;
-}
-
-.number {
-  width: 12%;
-  padding: 5px;
-  /* adjust this for mobile view */
-}
-
-/* Textbox height determined height of tr*/
-.number input[type="number"] {
-  width: 100%;
-  height: 35px;
-  border: none;
   outline: none;
-  background: none;
-  font-size: 15px;
-  color: rgb(59, 59, 59);
-  -moz-appearance: textfield;
+  color: #0F172A;
+  font-weight: 700;
+  width: 80px;
+  border-bottom: 1px dashed #CBD5E1;
+  text-align: right;
 }
 
-.amount {
-  width: 100%;
-  height: 45px;
-  border: none !important;
-  outline: none;
-  background: none;
-  font-family: "Roboto", Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 15px;
-}
-.discount {
-  width: 100%;
-  height: 45px;
-  border: none !important;
-  outline: none;
-  background: none;
-  font-family: "Roboto", Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 15px;
-}
-
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-.item input[type="text"] {
-  width: 90%;
-  height: 35px;
-  border: none;
-  outline: none;
-  background: none;
-  color: rgb(59, 59, 59);
-}
-
-.addButton {
+.billingColumn {
   display: flex;
-  align-items: flex-start;
-  padding-left: 15px;
-  padding-top: 10px;
+  flex-direction: column;
 }
 
-.addButton button {
-  width: 40px;
-  height: 40px;
-  background-color: #007fff;
-  color: #fff;
-  border-radius: 100%;
+.billingHeader {
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748B;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+
+.billingInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.companyName {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0F766E;
+}
+
+.companyMeta, .clientMeta {
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.6;
+}
+
+.clientName {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0F172A;
+}
+
+.customerActionBtn {
+  background: none;
   border: none;
-  outline: none;
-  font-size: 22px;
-  text-align: center;
-  box-shadow: 0 2.8px 2.2px rgba(0, 0, 0, 0.048),
-    0 6.7px 5.3px rgba(0, 0, 0, 0.069), 0 12.5px 10px rgba(0, 0, 0, 0.085),
-    0 22.3px 17.9px rgba(0, 0, 0, 0.101), 0 41.8px 33.4px rgba(0, 0, 0, 0.122),
-    0 100px 80px rgba(0, 0, 0, 0.17);
+  color: #0F766E;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
+  padding: 0;
 }
 
-.addButton button:hover {
-  background-color: #df1174;
+.customerActionBtn:hover {
+  text-decoration: underline;
 }
 
-.delete {
-  display: flex;
+/* TableCard styling */
+.tableCard {
+  padding: 0;
+  overflow: hidden;
+  margin-bottom: 40px;
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+}
+
+.tableContainer {
+  width: 100%;
+}
+
+.itemTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.itemTable th {
+  background: #F8FAFC;
+  padding: 14px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  border-bottom: 1px solid #E2E8F0;
+}
+
+.itemTable td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #F1F5F9;
+  vertical-align: middle;
+}
+
+.itemRow {
+  transition: background-color 0.2s ease;
+}
+
+.itemRow:hover {
+  background-color: #F8FAFC;
+}
+
+.tableInput {
+  width: 100%;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  color: #0F172A;
+  background-color: #FFFFFF;
+  transition: all 0.2s;
+  outline: none;
+}
+
+.tableInput:focus {
+  border-color: #0F766E;
+  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.1);
+}
+
+.deleteButton {
+  background: none;
+  border: none;
+  color: #94A3B8;
+  padding: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  /* margin-left: 30px; */
 }
 
-.submitButton {
-  margin: 20px auto;
-  padding: 18px 25px;
-  border: 2px solid #007fff;
-  background-color: white;
-  border-radius: 30px;
-  font-family: "Roboto", Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 16px;
-  color: rgb(73, 73, 73);
+.deleteButton:hover {
+  background-color: #FEE2E2;
+  color: #EF4444;
+}
+
+.addRowBtnContainer {
+  padding: 16px;
+  background-color: #FFFFFF;
+}
+
+.addRowBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: none;
+  border: 1px dashed #CBD5E1;
+  border-radius: 8px;
+  padding: 10px 16px;
+  color: #0F766E;
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  outline: none;
+  width: 100%;
+  transition: all 0.2s;
 }
 
-.submitButton:hover {
-  background-color: #007fff;
-  color: white;
+.addRowBtn:hover {
+  border-color: #0F766E;
+  background-color: rgba(15, 118, 110, 0.03);
 }
 
-.invoiceSummary div {
-  border-bottom: 1px solid rgb(231, 231, 231);
-  font-family: "Roboto", Tahoma, Geneva, Verdana, sans-serif;
-  text-align: left;
-  margin-left: 50%;
-  font-size: 15px;
+/* Bottom Invoice Layout */
+.bottomInvoiceLayout {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 60px;
+  margin-top: 40px;
+  margin-bottom: 40px;
+  padding: 0 32px;
+}
+
+.bottomLeft {
   display: flex;
-  color: gray;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.summary {
-  background-color: rgb(247, 247, 247);
-  font-weight: 500;
-  padding: 15px 0px;
-  padding-left: 15px;
+.paymentMethodBlock h4, .notesBlock h4 {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748B;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
+
+.paymentDetails {
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.6;
+}
+
+.notesTextarea {
+  width: 100%;
+  min-height: 80px;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.notesTextarea:focus {
+  border-color: #0F766E;
+  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.1);
+}
+
+.bottomRight {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-end;
 }
 
 .summaryItem {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-}
-
-.summaryItem p, h4 {
-  padding: 15px;
-}
-
-.summaryItem input {
-  font-family: "Roboto", Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 15px;
-  border: none;
-  outline: none;
-  text-align: right;
-}
-
-.toolBar {
-  margin-top: 50px;
-}
-
-.summaryItem span {
-  text-align: left;
-}
-.note {
-  margin-top: 20px;
-}
-
-textarea {
   width: 100%;
-  height: 100px;
-  outline: none;
-  border: none;
-  font-family: "Roboto", Tahoma, Geneva, Verdana, sans-serif;
   font-size: 14px;
-  resize: none;
+  color: #475569;
 }
 
-.note h4 {
-  text-align: left;
-}
-
-.toolBar {
+.summaryTotalRow {
   display: flex;
+  justify-content: space-between;
+  width: 100%;
+  border-top: 1px solid #E2E8F0;
+  padding-top: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0F172A;
 }
 
+.totalValue {
+  color: #0F766E;
+}
 
-@media all and (max-width: 768px) {
+/* Footer Section */
+.footerInvoiceSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 60px;
+  padding: 30px 32px 0 32px;
+  border-top: 1px dashed #E2E8F0;
+}
 
-  .invoiceLayout {
-   width: 97%;
-  }
+.thankYouBlock h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #475569;
+  font-style: italic;
+}
 
+.signatureBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 200px;
+}
 
-  .invoiceSummary div {
-    margin-left: 0%;
-   
-  }
+.signatureImage {
+  max-height: 70px;
+  max-width: 200px;
+  object-fit: contain;
+  margin-bottom: 4px;
+  mix-blend-mode: multiply;
+}
 
+.signatureLine {
+  width: 100%;
+  border-bottom: 1px solid #94A3B8;
+  margin-bottom: 6px;
+}
+
+.signatureLabel {
+  font-size: 12px;
+  color: #64748B;
+  font-weight: 500;
+}
+
+/* Sidebar styling */
+.sidebarTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0F172A;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #F1F5F9;
+  padding-bottom: 10px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.inputLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.styledInput {
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  outline: none;
+  background-color: #FFFFFF;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.styledInput:focus {
+  border-color: #0F766E;
+  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.1);
+}
+
+.sidebarActions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.btnPrimary {
+  background: #0F766E;
+  border: 1px solid #0F766E;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  width: 100%;
+}
+
+.btnPrimary:hover {
+  background: #0D635C;
+  border-color: #0D635C;
+}
+
+.btnSecondary {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  width: 100%;
+}
+
+.btnSecondary:hover {
+  background: #F8FAFC;
+  border-color: #CBD5E1;
+  color: #0F172A;
+}
+
+.autocompleteCustom :global(.MuiOutlinedInput-root) {
+  border-radius: 8px !important;
+  background-color: #FFFFFF;
+}
+
+.autocompleteCustom :global(.MuiOutlinedInput-notchedOutline) {
+  border-color: #E2E8F0 !important;
+}
+
+.autocompleteCustom :global(.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline) {
+  border-color: #0F766E !important;
+  border-width: 2px !important;
 }

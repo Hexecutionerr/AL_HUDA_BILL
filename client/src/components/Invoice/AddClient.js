@@ -58,7 +58,7 @@ const DialogActions = withStyles((theme) => ({
   },
 }))(MuiDialogActions);
 
-const AddClient = ({ setOpen, open }) => {
+const AddClient = ({ setOpen, open, setClient }) => {
 
     const location = useLocation()
     const [clientData, setClientData] = useState({ name: '', email: '', phone: '', address: '', userId: [] })
@@ -78,9 +78,18 @@ const AddClient = ({ setOpen, open }) => {
     },[location])
    
 
-    const handleSubmitClient =(e)=> {
+    const handleSubmitClient = async (e)=> {
         e.preventDefault()
-          dispatch(createClient(clientData, openSnackbar))
+        const checkId = user?.result?._id || user?.result?.googleId
+        const finalClientData = {
+            ...clientData,
+            userId: checkId ? [checkId] : []
+        }
+        
+        const newCustomer = await dispatch(createClient(finalClientData, openSnackbar))
+        if(newCustomer && setClient) {
+            setClient(newCustomer)
+        }
         
         clear()
         handleClose()

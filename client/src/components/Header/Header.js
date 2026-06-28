@@ -33,22 +33,14 @@ const Header = () => {
     const history = useHistory()
     const location = useLocation()
 
+    const [profileDetail, setProfileDetail] = useState(JSON.parse(localStorage.getItem('profileDetail')))
 
     useEffect(() => {
         setUser(JSON.parse(localStorage.getItem('profile')))
+        setProfileDetail(JSON.parse(localStorage.getItem('profileDetail')))
     },[location])
 
-    
-    //GET REPO INFO FROM GITHUB
-    // useEffect(() => {
-    //   getMetaData()
-    // },[])
 
-
-    // const getMetaData = async() => {
-    //   const response = await axios.get('https://api.github.com/repos/panshak/arc')
-    //       // console.log(response.data);
-    // }
 
     const logout =() => {
         dispatch({ type: 'LOGOUT' })
@@ -61,9 +53,13 @@ const Header = () => {
         const token = user?.token
         // setUser(JSON.parse(localStorage.getItem('profile')))
         //If token expires, logout the user
-        if(token) {
-            const decodedToken = decode(token)
-            if(decodedToken.exp * 1000 < new Date().getTime()) logout()
+        if(token && token.split('.').length === 3) {
+            try {
+                const decodedToken = decode(token)
+                if(decodedToken && decodedToken.exp * 1000 < new Date().getTime()) logout()
+            } catch (error) {
+                console.error("Invalid token format:", error)
+            }
         }
         // eslint-disable-next-line
     }, [location, user]) //when location changes, set the user
@@ -114,12 +110,6 @@ const Header = () => {
 
 
 
-    if(!user) return (
-        <div className={styles.header2}>
-         <img style={{width: '50px', cursor: 'pointer'}} onClick={()=> history.push('/')} src="https://i.postimg.cc/hGZKzdkS/logo.png" alt="arc-invoice" />
-        <button onClick={()=> history.push('/login')} className={styles.login}>Get started</button>
-        </div>
-    )
     return (
         <div className={styles.header}>
             <div className={classes.root}>
@@ -130,7 +120,11 @@ const Header = () => {
           aria-haspopup="true"
           onClick={handleToggle}
         >
-          <Avatar style={{backgroundColor: '#1976D2'}}>{user?.result?.name?.charAt(0)}</Avatar>
+          {profileDetail?.logo ? (
+            <Avatar src={profileDetail.logo} alt="" />
+          ) : (
+            <Avatar style={{backgroundColor: '#1976D2'}}>{user?.result?.name?.charAt(0)}</Avatar>
+          )}
         </Button>
         <Popper open={open} anchorEl={anchorRef.current} role={undefined} transition disablePortal>
           {({ TransitionProps, placement }) => (
@@ -141,8 +135,9 @@ const Header = () => {
               <Paper elevation={3}>
                 <ClickAwayListener onClickAway={handleClose}>
                   <MenuList autoFocusItem={open} id="menu-list-grow" onKeyDown={handleListKeyDown} >
-                    <MenuItem onClick={() => openLink('settings') }>{(user?.result?.name).split(" ")[0]}</MenuItem>
-                    <MenuItem onClick={()=> logout()} >Logout</MenuItem>
+                    <MenuItem onClick={() => openLink('settings') }>Profile</MenuItem>
+                    {/* Logout disabled for Demo ERP session */}
+                    {/* <MenuItem onClick={()=> logout()} >Logout</MenuItem> */}
                   </MenuList>
                 </ClickAwayListener>
               </Paper>

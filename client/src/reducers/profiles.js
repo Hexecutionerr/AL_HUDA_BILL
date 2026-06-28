@@ -23,7 +23,12 @@ const profilesReducer = (state = { isLoading: true, profiles: [] }, action) => {
     case CREATE_PROFILE:
       return {...state, profiles: [...state.profiles, action.payload]}
     case UPDATE_PROFILE:
-      return {...state, profiles: state.profiles.map((profile) => (profile._id === action.payload._id ? action.payload : profile))}
+      // profiles can be a single object (from FETCH_PROFILE_BY_USER) or an array
+      if (Array.isArray(state.profiles)) {
+        return {...state, profiles: state.profiles.map((profile) => (profile._id === action.payload._id ? action.payload : profile))}
+      }
+      // single object case
+      return {...state, profiles: action.payload}
     case DELETE_PROFILE:
       return {...state, profiles: state.profiles.filter((profile) => profile._id !== action.payload)}
     default:

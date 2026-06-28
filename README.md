@@ -1,180 +1,114 @@
-### [accountill.com](https://accountill.com/)
-# MERN Stack Invoicing Application
-Built with the MERN stack (MongoDB, Express, React and NodeJS).
-![Invoice](https://res.cloudinary.com/almpo/image/upload/v1637311386/invoice/invoice-app_tcz0dj.png)
+# AL Huda - Modern MERN Stack Invoicing Application
 
+A highly polished, premium, and functional MERN stack (MongoDB, Express, React, Node.js) invoicing application specially optimized for businesses. Easily create, customize, download, and track invoices, customers, and payments.
 
-## Update
-I am pleased to inform you that the name of this repository has been changed from Arc Invoice to Accountill.
-There are so many things coming! Stay tuned!!
+---
 
+## 👨‍💻 Author
 
-Panshak
-----
+**Hasnain Khan**  
+*Lead Developer & Architect*
 
-  * [Introduction](#introduction)
-  * [Key Features](#key-features)
-  * [Technologies used](#technologies-used)
-      - [Client](#client)
-      - [Server](#server)
-      - [Database](#database)
-  * [Configuration and Setup](#configuration-and-setup)
-  * [Troubleshooting](#troubleshooting)
-  * [Author](#author)
-  * [License](#license)
+- [GitHub](https://github.com/Hexecutionerr)
+- [LinkedIn](https://www.linkedin.com/in/hasnain-khan-0ab3b2320)
 
-## Introduction
-This is a side project I've been working on. A full stack invoicing application made using the MERN stack (MongoDB, Express, React & Nodejs), specially designed for freelancers and small businesses, but can be used for almost any type of business need. With this application, you can send beautiful invoices, receipts, estimates, quotes, bills etc to your clients. Jump right off the [Live App](https://accountill.com/) and start sending invoice or download the entire [Source code](https://github.com/Panshak/accountill) and run it on your server. This project is something I've been working on in my free time so I cannot be sure that everything will work out correctly. But I'll appreciate you if can report any issue.
+---
 
-![Invoice Dashboard](https://res.cloudinary.com/almpo/image/upload/v1637314504/invoice/dashboard_c5z0is.png)
+## 🌟 Key Features & Customizations
 
-## Key Features
-- Send invoices, receipts, estimates, quotations and bills via email
-- Generate and send/download pdf invoices, receipts, estimates, quotations and bills via email
-- Set due date.
-- Automatic status change when payment record is added
-- Payment history section for each invoice with record about payment date, payment method and extra note.
-- Record partial payment of invoice.
-- Clean admin dashboard for displaying all invoice statistics including total amount received, total pending, recent payments, total invoice paid, total unpaid and partially paid invoices. 
-- Multiple user registration.
-- Authentication using jsonwebtoken (jwt) and Google auth
+### 📊 Redesigned Dashboard & Revenue Metrics
+- **Premium Cards Grid**: 8 clean status/KPI metrics cards indicating payments received, pending amounts, paid/unpaid invoice counts, and overdue indicators with dynamic color gradients.
+- **Invoices Awaiting Payment Section**: Lists all Unpaid and Partially Paid invoices directly on the Dashboard.
+- **Instant Record Payment Modal**: Allows you to record payments for any awaiting invoice directly from the dashboard, automatically recalculating balance values and updating statuses.
+- **Recent Payment Activities Feed**: Dynamic list showing recent payment records, complete with customer initials avatars, amount indicators, and payment method badges.
+- **Interactive Navigation**: Clickable stats cards and awaiting invoice rows that direct you straight to corresponding list or detail views.
 
+### 🧾 Invoices Management & Modern Table View
+- **Modernized Invoices Page**: Replaced standard table UI with a beautiful custom card-based list layout.
+- **Status Filter & Search**: Search bar to query by invoice number or customer name, and a status dropdown filter (All, Paid, Unpaid, Partial).
+- **Dot Badge Indicators**: Clean badge pills (🟢 Paid, 🔴 Unpaid, 🔵 Partial) for instant status tracking.
+- **Overdue Reminders**: Automatic red highlight warning tag if the invoice has passed its due date.
 
-## Technologies used
-This project was created using the following technologies.
+### ⚙️ Business Profile Settings
+- **Dual-Card Settings Dashboard**: Separate sections for *Business Details* and *Payment/Bank Details*.
+- **Integrated Base64 Image Uploader**: Allows uploading business logos with live banner preview. The frontend automatically resizes and compresses logos using canvas to keep database payloads lightweight (under 20KB) and make PDF generation faster.
+- **Structured Bank Details Form**: Split legacy payment text blobs into structured fields (Bank Name, Account Holder Name, Account Number, IFSC Code, Mobile/UPI, and Branch).
 
-#### Client
+### 🧾 Invoice Detail Views & Faster PDF Exports
+- **Slide-in Navigation Drawer**: Standard sidebar is completely hidden by default and smoothly slides in on hover from the left edge of the screen, preserving desktop workspace.
+- **One-Step Direct PDF Downloads**: Fixed browser context UUID downloads. The app now generates and streams invoice PDFs in a single call with correct filenames directly using browser content-disposition headers.
+- **SMTP Nodemailer Crash Protection**: Backend includes try-catch blocks and error callbacks to ensure that invalid mail credentials do not crash the running Node.js server.
 
-- React JS
-- Redux (for managing and centralizing application state)
-- React-router-dom (To handle routing)
-- Axios (for making api calls)
-- Material UI & CSS Module (for User Interface)
-- React simple Snackbar (To display success/error notifications)
-- Cloudinary (to allows users to upload their business logo)
-- Apex Charts (to display payment history)
-- React-google-login (To enable authentication using Google)
+---
 
-#### Server
+## 🚀 Technologies Used
 
-- Express
-- Mongoose
-- JWT (For authentication)
-- bcryptjs (for data encryption)
-- Nodemailer (for sending invoice via email)
-- html-pdf (for generating invoice PDFs)
+### Frontend (Client)
+- **React.js** & **Redux** (State management)
+- **React-router-dom** (Client routing)
+- **Axios** (API requests)
+- **CSS Modules** (Modular styling with zero Material UI tables)
+- **React Simple Snackbar** (Notifications)
+- **Moment.js** (Date formatting and relative offsets)
 
-#### Database
-MongoDB (MongoDB Atlas)
+### Backend (Server)
+- **Express.js** & **Node.js**
+- **Mongoose** (MongoDB Object Modeling)
+- **html-pdf** (Headless WebKit PhantomJS engine for PDF renders)
+- **Nodemailer** (Email notifications)
 
-## Configuration and Setup
-In order to run this project locally, simply fork and clone the repository or download as zip and unzip on your machine. 
-- Open the project in your prefered code editor.
-- Go to terminal -> New terminal (If you are using VS code)
-- Split your terminal into two (run the client on one terminal and the server on the other terminal)
+---
 
-In the first terminal
-- cd client and create a .env file in the root of your client directory.
-- Supply the following credentials
+## 🛠️ Configuration and Setup
 
-```
-REACT_APP_GOOGLE_CLIENT_ID = 
-REACT_APP_API = http://localhost:5000
-REACT_APP_URL = http://localhost:3000
+### Prerequisites
+- Node.js installed
+- MongoDB running locally or a MongoDB Atlas connection URI
 
+### Client (.env)
+Create a `.env` file under `client/` and supply:
+```env
+REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id
+REACT_APP_API=http://localhost:5000
+REACT_APP_URL=http://localhost:3001
 ```
 
-To get your Google ClientID for authentication, go to the [credential Page ](https://console.cloud.google.com/apis/credentials) (if you are new, then [create a new project first](https://console.cloud.google.com/projectcreate) and follow the following steps;
-
-- Click Create credentials > OAuth client ID.
-- Select the Web application type.
-- Name your OAuth client and click Create
-- Remember to provide your domain and redirect URL so that Google identifies the origin domain to which it can display the consent screen. In development, that is going to be `http://localhost:3000` and `http://localhost:3000/login`
-- Copy the Client ID and assign it to the variable `REACT_APP_GOOGLE_CLIENT_ID` in your .env file
-
-```
-$ cd client
-$ npm install (to install client-side dependencies)
-$ npm start (to start the client)
-```
-In the second terminal
-- cd server and create a .env file in the root of your server directory.
-- Supply the following credentials
-
-```
-DB_URL = 
-PORT = 5000
-SECRET = 
-SMTP_HOST = 
-SMTP_PORT = 
-SMTP_USER = 
-SMTP_PASS = 
-
+```bash
+cd client
+npm install
+npm start
 ```
 
-Please follow [This tutorial](https://dev.to/dalalrohit/how-to-connect-to-mongodb-atlas-using-node-js-k9i) to create your mongoDB connection url, which you'll use as your DB_URL
+### Server (.env)
+Create a `.env` file under `server/` and supply:
+```env
+DB_URL=mongodb://127.0.0.1:27017/accountill
+PORT=5000
+SECRET=your_jwt_secret
 
-```
-$ cd server
-$ npm install (to install server-side dependencies)
-& npm start (to start the server)
-```
-
-## Troubleshooting
-If you're getting error while trying to send or download PDF,
-please run the following in your server terminal.
-
-```
-$ npm install html-pdf -g
-$ npm link html-pdf
-$ npm link phantomjs-prebuilt
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_email@gmail.com
+SMTP_PASS=your_app_password
 ```
 
-## Docker
-
-Using docker is simple. Just add the .env contextualized with the docker network.
-
-e.g:
-
-> goes to path "server/.env"
-```
-DB_URL = mongodb://mongo:27017/arch
-PORT = 5000
-SECRET = 
-SMTP_HOST = 
-SMTP_PORT = 
-SMTP_USER = 
-SMTP_PASS = 
-```
-> goes to path "client/.env"
-```
-REACT_APP_GOOGLE_CLIENT_ID = 
-REACT_APP_API = http://localhost:5000
-REACT_APP_URL = http://localhost
+```bash
+cd server
+npm install
+npm run dev
 ```
 
-And run
+---
 
-```
+## 🐳 Docker Deployment
+
+To build and run in production using Docker Compose:
+```bash
 docker-compose -f docker-compose.prod.yml build
-
-And then
-
 docker-compose -f docker-compose.prod.yml up
 ```
 
-## Comment
-I intend to keep adding more features to this application, so if you like it, please give it a star, that will encourage me to 
-to keep improving the project.
+---
 
-
-## Author
-
-- Twitter: [@panshak_](https://twitter.com/panshak_)
-- Github: [@panshak](https://github.com/panshak)
-- Linkedin: [@panshak](https://www.linkedin.com/in/panshak/)
-- Email: [@ipanshak](mailto:ipanshak@gmail.com)
-
-## License
-
-- This project is [MIT](https://github.com/Panshak/accountill/blob/master/LICENSE.md) licensed.
+## 📄 License
+This project is licensed under the [MIT License](LICENSE.md).

@@ -1,5 +1,4 @@
-
-//Copyright (c) 2022 Panshak Solomon
+//Copyright (c) 2026 Hasnain Khan
 
 import express from 'express'
 import mongoose from 'mongoose'

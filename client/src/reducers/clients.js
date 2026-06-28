@@ -2,6 +2,8 @@
 import { ALL_CLIENTS, ADD_NEW_CLIENT, UPDATE_CLIENT, DELETE_CLIENT, FETCH_CLIENTS_BY_USER, FETCH_CLIENT, START_LOADING, END_LOADING } from '../actions/constants'
 
 const clients = (state = { isLoading: true, clients: [] }, action) => {
+    console.log("CLIENT REDUCER:", action.type, action.payload);
+    console.log("CONSTANT VALUE FETCH_CLIENTS_BY_USER:", FETCH_CLIENTS_BY_USER);
     switch (action.type) {
       case START_LOADING:
         return { ...state, isLoading: true };

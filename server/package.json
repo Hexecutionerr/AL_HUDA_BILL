@@ -1,15 +1,16 @@
 {
   "name": "server",
-  "homepage": "accountill.com",
+  "homepage": "alhudatextiles.com",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
   "keywords": [],
-  "author": "Panshak Solomon",
+  "author": "Hasnain Khan",
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",

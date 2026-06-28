@@ -31,6 +31,43 @@ import { saveAs } from 'file-saver';
 import Modal from '../Payments/Modal'
 import PaymentHistory from './PaymentHistory'
 
+const paymentMethodsList = {
+    bob: {
+        bankName: 'Bank of Baroda',
+        accountName: 'Mohammed ishtiaq Ahmed Khan',
+        accountNo: '36050100011339',
+        ifscCode: 'BARB0MCKAUS',
+        mobile: '9987804375',
+        branch: 'Kausa branch Mumbra, Mumbai Maharashtra'
+    },
+    embd: {
+        bankName: 'Emirates NBD',
+        accountName: 'AL Huda Export Management',
+        accountNo: '0123 4567 8901',
+        branch: 'Business Bay, Dubai, UAE'
+    }
+};
+
+const getCurrencySymbol = (val) => {
+    if (val === 'INR') return '₹';
+    if (val === 'USD') return '$';
+    if (val === 'EUR') return '€';
+    if (val === 'GBP') return '£';
+    return val;
+}
+
+const formatIfsc = (code) => {
+    if (code === 'BARB0MCKAUS') {
+        return (
+            <>
+                <span style={{ fontFamily: 'Courier New, monospace', letterSpacing: '2px', fontWeight: 'bold' }}>BARB0MCKAUS</span>
+                <span style={{ fontSize: '11px', color: '#94A3B8', marginLeft: '6px' }}>(0 is Zero)</span>
+            </>
+        );
+    }
+    return <span style={{ fontFamily: 'Courier New, monospace', letterSpacing: '2px', fontWeight: 'bold' }}>{code}</span>;
+}
+
 const InvoiceDetails = () => {
 
     const location = useLocation()
@@ -51,6 +88,16 @@ const InvoiceDetails = () => {
     const history = useHistory()
     const [sendStatus, setSendStatus] = useState(null)
     const [downloadStatus, setDownloadStatus] = useState(null)
+    const [paymentMethod, setPaymentMethod] = useState('bob')
+    const [customBankDetails, setCustomBankDetails] = useState({
+        bankName: '',
+        accountName: '',
+        accountNo: '',
+        ifscCode: '',
+        mobile: '',
+        branch: ''
+    })
+    const [displayNotes, setDisplayNotes] = useState('')
     // eslint-disable-next-line
     const [openSnackbar, closeSnackbar] = useSnackbar()
     const user = JSON.parse(localStorage.getItem('profile'))
@@ -102,6 +149,31 @@ const InvoiceDetails = () => {
             setTotal(invoice.total)
             setCompany(invoice?.businessDetails?.data?.data)
            
+            if (invoice.notes) {
+                const match = invoice.notes.match(/---PAYMENT_METHOD:(.*)---/);
+                if (match) {
+                    const val = match[1];
+                    if (val.startsWith('custom|')) {
+                        const parts = val.split('|');
+                        setPaymentMethod('custom');
+                        setCustomBankDetails({
+                            bankName: parts[1] || '',
+                            accountName: parts[2] || '',
+                            accountNo: parts[3] || '',
+                            ifscCode: parts[4] || '',
+                            mobile: parts[5] || '',
+                            branch: parts[6] || ''
+                        });
+                    } else {
+                        setPaymentMethod(val);
+                    }
+                    setDisplayNotes(invoice.notes.replace(/---PAYMENT_METHOD:(.*)---/, '').trim());
+                } else {
+                    setDisplayNotes(invoice.notes);
+                }
+            } else {
+                setDisplayNotes('');
+            }
         }
     }, [invoice])
 
@@ -116,40 +188,59 @@ const InvoiceDetails = () => {
     history.push(`/edit/invoice/${id}`)
   }
 
-  const createAndDownloadPdf = () => {
+  const createAndDownloadPdf = async () => {
     setDownloadStatus('loading')
-    axios.post(`${process.env.REACT_APP_API}/create-pdf`, 
-    { name: invoice.client.name,
-      address: invoice.client.address,
-      phone: invoice.client.phone,
-      email: invoice.client.email,
-      dueDate: invoice.dueDate,
-      date: invoice.createdAt,
-      id: invoice.invoiceNumber,
-      notes: invoice.notes,
-      subTotal: toCommas(invoice.subTotal),
-      total: toCommas(invoice.total),
-      type: invoice.type,
-      vat: invoice.vat,
-      items: invoice.items,
-      status: invoice.status,
-      totalAmountReceived: toCommas(totalAmountReceived),
-      balanceDue: toCommas(total - totalAmountReceived),
-      company: company,
-  })
-      .then(() => axios.get(`${process.env.REACT_APP_API}/fetch-pdf`, { responseType: 'blob' }))
-      .then((res) => {
-        const pdfBlob = new Blob([res.data], { type: 'application/pdf' });
+    const activePaymentDetails = paymentMethod === 'bob' ? paymentMethodsList.bob 
+                               : paymentMethod === 'embd' ? paymentMethodsList.embd 
+                               : customBankDetails;
 
-        saveAs(pdfBlob, 'invoice.pdf')
-      }).then(() =>  setDownloadStatus('success'))
+    try {
+        const response = await axios.post(
+            `${process.env.REACT_APP_API}/download-pdf`,
+            {
+                name: invoice?.client?.name || '',
+                address: invoice?.client?.address || '',
+                phone: invoice?.client?.phone || '',
+                email: invoice?.client?.email || '',
+                dueDate: invoice.dueDate,
+                date: invoice.createdAt,
+                id: invoice.invoiceNumber,
+                notes: displayNotes,
+                subTotal: toCommas(invoice.subTotal),
+                total: toCommas(invoice.total),
+                type: invoice.type,
+                vat: invoice.vat,
+                items: invoice.items,
+                status: invoice.status,
+                totalAmountReceived: toCommas(totalAmountReceived),
+                balanceDue: toCommas(total - totalAmountReceived),
+                company: company,
+                currencySymbol: getCurrencySymbol(invoice.currency || 'INR'),
+                paymentDetails: activePaymentDetails
+            },
+            { responseType: 'blob' }
+        );
+
+        // Use the blob with file-saver — filename is also set by Content-Disposition on server
+        const pdfBlob = new Blob([response.data], { type: 'application/pdf' });
+        saveAs(pdfBlob, `invoice_${invoice.invoiceNumber}.pdf`);
+        setDownloadStatus('success');
+    } catch (err) {
+        console.error('PDF download error:', err);
+        setDownloadStatus('error');
+    }
   }
+
 
 
   //SEND PDF INVOICE VIA EMAIL
   const sendPdf = (e) => {
     e.preventDefault()
     setSendStatus('loading')
+    const activePaymentDetails = paymentMethod === 'bob' ? paymentMethodsList.bob 
+                               : paymentMethod === 'embd' ? paymentMethodsList.embd 
+                               : customBankDetails;
+
     axios.post(`${process.env.REACT_APP_API}/send-pdf`, 
     { name: invoice.client.name,
       address: invoice.client.address,
@@ -158,7 +249,7 @@ const InvoiceDetails = () => {
       dueDate: invoice.dueDate,
       date: invoice.createdAt,
       id: invoice.invoiceNumber,
-      notes: invoice.notes,
+      notes: displayNotes,
       subTotal: toCommas(invoice.subTotal),
       total: toCommas(invoice.total),
       type: invoice.type,
@@ -169,8 +260,9 @@ const InvoiceDetails = () => {
       balanceDue: toCommas(total - totalAmountReceived),
       link: `${process.env.REACT_APP_URL}/invoice/${invoice._id}`,
       company: company,
+      currencySymbol: getCurrencySymbol(invoice.currency || 'INR'),
+      paymentDetails: activePaymentDetails
   })
-  // .then(() => console.log("invoice sent successfully"))
   .then(() => setSendStatus('success'))
       .catch((error) => {
         console.log(error)
@@ -243,132 +335,146 @@ if(!invoice) {
         
             <Modal open={open} setOpen={setOpen} invoice={invoice}/>
             <div className={styles.invoiceLayout}>
-        <Container  className={classes.headerContainer}>
-        
-            <Grid container justifyContent="space-between" style={{padding: '30px 0px' }}>
-            {!invoice?.creator?.includes(user?.result._id || user?.result?.googleId) ? 
-            (
-              <Grid item>
-              </Grid>
-            )
-            : (
-                <Grid item onClick={() => history.push('/settings')} style={{cursor: 'pointer'}}>
-                    {company?.logo ? <img src={company?.logo} alt="Logo" className={styles.logo} /> 
-                    :
-                    <h2>{company?.name}</h2>
-                    }
-                </Grid>
-            )}
-                <Grid item style={{marginRight: 40, textAlign: 'right'}}>
-                    <Typography style={{lineSpacing: 1, fontSize: 45, fontWeight: 700, color: 'gray'}} >{Number(total - totalAmountReceived) <= 0 ? 'Receipt' : type}</Typography>
-                    <Typography variant="overline" style={{color: 'gray'}} >No: </Typography>
-                    <Typography variant="body2">{invoiceData?.invoiceNumber}</Typography>
-                </Grid>
-            </Grid >
-        </Container>
-        <Divider />
-        <Container>
-            <Grid container justifyContent="space-between" style={{marginTop: '40px'}} >
-                <Grid item>
-                    {invoice?.creator?.includes(user?.result._id) && (
-                      <Container style={{marginBottom: '20px'}}>
-                        <Typography variant="overline" style={{color: 'gray'}} gutterBottom>From</Typography>
-                        <Typography variant="subtitle2">{invoice?.businessDetails?.data?.data?.businessName}</Typography>
-                        <Typography variant="body2">{invoice?.businessDetails?.data?.data?.email}</Typography>
-                        <Typography variant="body2">{invoice?.businessDetails?.data?.data?.phoneNumber}</Typography>
-                        <Typography variant="body2" gutterBottom>{invoice?.businessDetails?.data?.data?.address}</Typography>
-                      </Container>
-                    )}
-                    <Container>
-                        <Typography variant="overline" style={{color: 'gray', paddingRight: '3px'}} gutterBottom>Bill to</Typography>
-                        <Typography variant="subtitle2" gutterBottom>{client.name}</Typography>
-                        <Typography variant="body2" >{client?.email}</Typography>
-                        <Typography variant="body2" >{client?.phone}</Typography>
-                        <Typography variant="body2">{client?.address}</Typography>
-                    </Container>
-                </Grid>
+                {/* Top Header Section */}
+                <div className={styles.invoiceHeaderRow}>
+                    <div className={styles.headerLogoLeft}>
+                        <img src="/logo.png" alt="AL HUDA" className={styles.alHudaLogo} />
+                    </div>
+                    <div className={styles.headerTitleRight}>
+                        <h1 className={styles.invoiceTitleRight}>{Number(total - totalAmountReceived) <= 0 ? 'RECEIPT' : type}</h1>
+                    </div>
+                </div>
 
-                <Grid item style={{marginRight: 20, textAlign: 'right'}}>
-                    <Typography variant="overline" style={{color: 'gray'}} gutterBottom>Status</Typography>
-                    <Typography variant="h6" gutterBottom style={{color: checkStatus()}}>{totalAmountReceived >= total ? 'Paid':status}</Typography>
-                    <Typography variant="overline" style={{color: 'gray'}} gutterBottom>Date</Typography>
-                    <Typography variant="body2" gutterBottom>{moment().format("MMM Do YYYY")}</Typography>
-                    <Typography variant="overline" style={{color: 'gray'}} gutterBottom>Due Date</Typography>
-                    <Typography variant="body2" gutterBottom>{selectedDate? moment(selectedDate).format("MMM Do YYYY") : '27th Sep 2021'}</Typography>
-                    <Typography variant="overline" gutterBottom>Amount</Typography>
-                    <Typography variant="h6" gutterBottom>{currency} {toCommas(total)}</Typography>
-                </Grid>
-            </Grid>
-        </Container>
+                {/* Details Row (Billing & Metadata) */}
+                <div className={styles.detailsRow}>
+                    {/* Left: BILLED TO & FROM */}
+                    <div className={styles.billedToCol}>
+                        <div style={{ marginBottom: '24px' }}>
+                            <h3 className={styles.billingHeader}>BILLED TO:</h3>
+                            <div className={styles.clientMeta}>
+                                <div style={{ fontSize: '16px', fontWeight: 700, color: '#0F172A', marginBottom: '4px' }}>{client?.name}</div>
+                                <div>{client?.phone}</div>
+                                <div>{client?.email}</div>
+                                <div>{client?.address}</div>
+                            </div>
+                        </div>
 
-        <form>
-            <div>
+                        <div>
+                            <h3 className={styles.billingHeader}>From:</h3>
+                            <div className={styles.companyMeta}>
+                                <div style={{ fontSize: '16px', fontWeight: 700, color: '#0F766E', marginBottom: '4px' }}>AL Huda</div>
+                                <div>alhudatextiless@gmail.com</div>
+                                <div>+91 79779 11837</div>
+                                <div>Colaba, Mumbai - 400005</div>
+                            </div>
+                        </div>
+                    </div>
 
-    <TableContainer component={Paper}>
-      <Table className={classes.table} aria-label="simple table">
-        <TableHead>
-          <TableRow>
-            <TableCell>Item</TableCell>
-            <TableCell >Qty</TableCell>
-            <TableCell>Price</TableCell>
-            <TableCell >Disc(%)</TableCell>
-            <TableCell >Amount</TableCell>
-           
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {invoiceData?.items?.map((itemField, index) => (
-            <TableRow key={index}>
-              <TableCell  scope="row" style={{width: '40%' }}> <InputBase style={{width: '100%'}} outline="none" sx={{ ml: 1, flex: 1 }} type="text" name="itemName" value={itemField.itemName} placeholder="Item name or description" readOnly /> </TableCell>
-              <TableCell align="right"> <InputBase sx={{ ml: 1, flex: 1 }} type="number" name="quantity" value={itemField?.quantity} placeholder="0" readOnly /> </TableCell>
-              <TableCell align="right"> <InputBase sx={{ ml: 1, flex: 1 }} type="number" name="unitPrice" value={itemField?.unitPrice} placeholder="0" readOnly /> </TableCell>
-              <TableCell align="right"> <InputBase sx={{ ml: 1, flex: 1 }} type="number" name="discount"  value={itemField?.discount} readOnly /> </TableCell>
-              <TableCell align="right"> <InputBase sx={{ ml: 1, flex: 1 }} type="number" name="amount"  value={(itemField?.quantity * itemField.unitPrice) - (itemField.quantity * itemField.unitPrice) * itemField.discount / 100} readOnly /> </TableCell>
-              
-              
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
-                <div className={styles.addButton}>
+                    {/* Right: Invoice Metadata */}
+                    <div className={styles.metaCol}>
+                        <div className={styles.metaRowItem}>
+                            <span className={styles.metaLabel}>Invoice No.</span>
+                            <span className={styles.metaValue}>{invoiceData?.invoiceNumber}</span>
+                        </div>
+                        <div className={styles.metaRowItem}>
+                            <span className={styles.metaLabel}>Status:</span>
+                            <span className={styles.metaValue} style={{ color: checkStatus(), fontWeight: 700 }}>{totalAmountReceived >= total ? 'Paid' : status}</span>
+                        </div>
+                        <div className={styles.metaRowItem}>
+                            <span className={styles.metaLabel}>Date:</span>
+                            <span className={styles.metaValue}>{moment(invoiceData?.createdAt).format("DD MMMM YYYY")}</span>
+                        </div>
+                        <div className={styles.metaRowItem} style={{ marginTop: '8px' }}>
+                            <span className={styles.metaLabel} style={{ fontSize: '15px' }}>Amount:</span>
+                            <span className={styles.metaValue} style={{ fontSize: '20px', color: '#0F766E', fontWeight: 800 }}>{getCurrencySymbol(currency)} {toCommas(total.toFixed(2))}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Table Section */}
+                <div className={styles.tableContainer}>
+                    <table className={styles.itemTable}>
+                        <thead>
+                            <tr>
+                                <th style={{ width: '45%' }}>Item Description</th>
+                                <th style={{ width: '12%', textAlign: 'right' }}>Qty</th>
+                                <th style={{ width: '15%', textAlign: 'right' }}>Price</th>
+                                <th style={{ width: '12%', textAlign: 'right' }}>Tax (%)</th>
+                                <th style={{ width: '16%', textAlign: 'right' }}>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {invoiceData?.items?.map((itemField, index) => {
+                                const itemAmount = (Number(itemField.quantity) || 0) * (Number(itemField.unitPrice) || 0) +
+                                    ((Number(itemField.quantity) || 0) * (Number(itemField.unitPrice) || 0) * (Number(itemField.discount) || 0)) / 100
+                                
+                                return (
+                                    <tr key={index} className={styles.itemRow}>
+                                        <td>{itemField.itemName}</td>
+                                        <td style={{ textAlign: 'right' }}>{itemField.quantity}</td>
+                                        <td style={{ textAlign: 'right' }}>{getCurrencySymbol(currency)} {toCommas(Number(itemField.unitPrice).toFixed(2))}</td>
+                                        <td style={{ textAlign: 'right' }}>{itemField.discount || '0'}%</td>
+                                        <td style={{ textAlign: 'right', fontWeight: 600 }}>{getCurrencySymbol(currency)} {toCommas(itemAmount.toFixed(2))}</td>
+                                    </tr>
+                                )
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Bottom Section */}
+                <div className={styles.bottomInvoiceLayout}>
+                    {/* Left: Payment Method & Notes */}
+                    <div className={styles.bottomLeft}>
+                        <div className={styles.paymentMethodBlock}>
+                            <h4>PAYMENT METHOD</h4>
+                            <div className={styles.paymentDetails}>
+                                <div><strong>Bank:</strong> {paymentMethod === 'bob' ? paymentMethodsList.bob.bankName : paymentMethod === 'embd' ? paymentMethodsList.embd.bankName : customBankDetails.bankName || 'N/A'}</div>
+                                <div><strong>Account Name:</strong> {paymentMethod === 'bob' ? paymentMethodsList.bob.accountName : paymentMethod === 'embd' ? paymentMethodsList.embd.accountName : customBankDetails.accountName || 'N/A'}</div>
+                                <div><strong>Account No:</strong> {paymentMethod === 'bob' ? paymentMethodsList.bob.accountNo : paymentMethod === 'embd' ? paymentMethodsList.embd.accountNo : customBankDetails.accountNo || 'N/A'}</div>
+                                {(paymentMethod === 'bob' ? paymentMethodsList.bob.ifscCode : customBankDetails.ifscCode) && <div><strong>IFSC Code:</strong> {formatIfsc(paymentMethod === 'bob' ? paymentMethodsList.bob.ifscCode : customBankDetails.ifscCode)}</div>}
+                                {(paymentMethod === 'bob' ? paymentMethodsList.bob.mobile : customBankDetails.mobile) && <div><strong>Mobile no.</strong> {paymentMethod === 'bob' ? paymentMethodsList.bob.mobile : customBankDetails.mobile}</div>}
+                                {(paymentMethod === 'bob' ? paymentMethodsList.bob.branch : paymentMethod === 'embd' ? paymentMethodsList.embd.branch : customBankDetails.branch) && <div><strong>Branch/Address:</strong> {paymentMethod === 'bob' ? paymentMethodsList.bob.branch : paymentMethod === 'embd' ? paymentMethodsList.embd.branch : customBankDetails.branch}</div>}
+                            </div>
+                        </div>
+
+                        {displayNotes && (
+                            <div className={styles.notesBlock}>
+                                <h4>Note:</h4>
+                                <p className={styles.notesText}>{displayNotes}</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Right: Summary totals */}
+                    <div className={styles.bottomRight}>
+                        <div className={styles.summaryItem}>
+                            <span>Subtotal</span>
+                            <span>{getCurrencySymbol(currency)} {toCommas(subTotal.toFixed(2))}</span>
+                        </div>
+                        <div className={styles.summaryItem}>
+                            <span>Tax / VAT ({rates}%)</span>
+                            <span>{getCurrencySymbol(currency)} {toCommas(vat.toFixed(2))}</span>
+                        </div>
+                        <div className={styles.summaryTotalRow}>
+                            <span>Total</span>
+                            <span className={styles.totalValue}>{getCurrencySymbol(currency)} {toCommas(total.toFixed(2))}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer Section */}
+                <div className={styles.footerInvoiceSection}>
+                    <div className={styles.thankYouBlock}>
+                        <h3>Thank you for your business!</h3>
+                    </div>
+                    <div className={styles.signatureBlock}>
+                        <img src="/signature.png" alt="Authorized Signed" className={styles.signatureImage} />
+                        <div className={styles.signatureLine}></div>
+                        <div className={styles.signatureLabel}>Authorized Signed</div>
+                    </div>
                 </div>
             </div>
-                
-                <div className={styles.invoiceSummary}>
-                    <div className={styles.summary}>Invoice Summary</div>
-                    <div className={styles.summaryItem}>
-                        <p>Subtotal:</p>
-                        <h4>{subTotal}</h4>
-                    </div>
-                    <div className={styles.summaryItem}>
-                        <p>{`VAT(${rates}%):`}</p>
-                        <h4>{vat}</h4>
-                    </div>
-                    <div className={styles.summaryItem}>
-                        <p>Total</p>
-                        <h4>{currency} {toCommas(total)}</h4>
-                    </div>
-                    <div className={styles.summaryItem}>
-                        <p>Paid</p>
-                        <h4>{currency} {toCommas(totalAmountReceived)}</h4>
-                    </div>
-
-                    <div className={styles.summaryItem}>
-                        <p>Balance</p>
-                        <h4 style={{color: "black", fontSize: "18px", lineHeight: "8px"}}>{currency} {toCommas(total - totalAmountReceived)}</h4>
-                    </div>
-                    
-                </div>
-
-                <div className={styles.note}>
-                    <h4 style={{marginLeft: '-10px'}}>Note/Payment Info</h4>
-                    <p style={{fontSize: '14px'}}>{invoiceData.notes}</p>
-                </div>
-
-            {/* <button className={styles.submitButton} type="submit">Save and continue</button> */}
-        </form>
-    </div>
         </div>
         
     )

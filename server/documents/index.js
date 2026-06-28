@@ -1,4 +1,40 @@
 import moment from 'moment'
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import { dirname } from 'path'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+
+let signatureBase64 = '';
+try {
+    const sigPath = path.resolve(__dirname, '../../client/public/signature.png');
+    if (fs.existsSync(sigPath)) {
+        const signatureBuffer = fs.readFileSync(sigPath);
+        signatureBase64 = `data:image/png;base64,${signatureBuffer.toString('base64')}`;
+    }
+} catch (error) {
+    console.error("Signature read error:", error);
+}
+
+let logoBase64 = '';
+try {
+    const logoPath = path.resolve(__dirname, '../../client/public/logo.png');
+    if (fs.existsSync(logoPath)) {
+        const logoBuffer = fs.readFileSync(logoPath);
+        logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
+    }
+} catch (error) {
+    console.error("Logo read error:", error);
+}
+
+const formatIfscHtml = (code) => {
+    if (code === 'BARB0MCKAUS') {
+        return `<span style="font-family: monospace; letter-spacing: 1.5px; font-weight: bold;">BARB0MCKAUS</span> <span style="font-size: 10px; color: #64748B;">(0 is Zero)</span>`;
+    }
+    return `<span style="font-family: monospace; letter-spacing: 1.5px; font-weight: bold;">${code}</span>`;
+}
 
 export default function (
    { name,
@@ -18,202 +54,372 @@ export default function (
       totalAmountReceived,
       balanceDue,
       company,
+      currencySymbol = '₹',
+      paymentDetails
    }) {
     const today = new Date();
-return `
+    
+    const companyName = 'AL Huda';
+    const companyEmail = 'alhudatextiless@gmail.com';
+    const companyPhone = '+91 79779 11837';
+    const companyAddress = 'Colaba, Mumbai - 400005';
+
+    return `
 <!DOCTYPE html>
 <html>
 <head>
 <style>
-
 .invoice-container {
     margin: 0;
+    padding: 20px;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    color: #0F172A;
+    background-color: #FFFFFF;
+}
+
+.top-section {
+    width: 100%;
+    margin-bottom: 30px;
+}
+
+.top-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: none;
+}
+
+.top-table td {
+    border: none;
     padding: 0;
-    padding-top: 10px;
-    font-family: 'Roboto', sans-serif;
-    width: 530px;
-    margin: 0px auto;
-    }
-
-table {
-  font-family: Arial, Helvetica, sans-serif;
-  border-collapse: collapse;
-  width: 100%;
+    vertical-align: top;
 }
 
-table td, table th {
-  border: 1px solid rgb(247, 247, 247);
-  padding: 10px;
-}
-
-table tr:nth-child(even){background-color: #f8f8f8;}
-
-table tr:hover {background-color: rgb(243, 243, 243);}
-
-table th {
-  padding-top: 12px;
-  padding-bottom: 12px;
-  text-align: left;
-  background-color: #FFFFFF;
-  color: rgb(78, 78, 78);
-}
-
-.header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 5px;
-    
-
-}
-.address {
-    display: flex;
-    align-items: center;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 10px 0px 15px 0px;
-    line-height: 10px;
-    font-size: 12px;
-    margin-top: -20px
-
-}
-
-.status {
-    text-align: right;
-}
-.receipt-id {
-    text-align: right;
-}
-
-.title {
-    font-weight: 100px;
+.invoice-title {
+    font-family: Georgia, Didot, serif;
+    font-size: 38px;
+    font-weight: 500;
+    letter-spacing: 3px;
+    color: #0F172A;
+    margin: 0;
     text-transform: uppercase;
-    color: gray;
-    letter-spacing: 2px;
-    font-size: 8px;
-    line-height: 5px;
 }
 
-.summary {
-    margin-top: 2px;
-    margin-right: 0px;
-    margin-left: 50%;
-    margin-bottom: 15px;
+.meta-info {
+    font-size: 12px;
+    color: #475569;
+    line-height: 1.5;
 }
 
-img {
-    width: 100px;
-   
+.billing-section {
+    width: 100%;
+    margin-bottom: 40px;
+}
+
+.billing-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: none;
+}
+
+.billing-table td {
+    border: none;
+    padding: 0;
+    width: 50%;
+    vertical-align: top;
+}
+
+.billing-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748B;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+}
+
+.company-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0F766E;
+    margin: 0 0 6px 0;
+}
+
+.client-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0F172A;
+    margin: 0 0 6px 0;
+}
+
+.details-text {
+    font-size: 12px;
+    color: #475569;
+    line-height: 1.5;
+}
+
+.items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 30px;
+}
+
+.items-table th {
+    background-color: #F8FAFC;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    text-align: left;
+    padding: 12px;
+    border-bottom: 2px solid #E2E8F0;
+}
+
+.items-table td {
+    padding: 12px;
+    font-size: 12px;
+    color: #0F172A;
+    border-bottom: 1px solid #E2E8F0;
+}
+
+.items-table tr:nth-child(even) {
+    background-color: #F8FAFC;
+}
+
+.bottom-section {
+    width: 100%;
+    margin-top: 30px;
+}
+
+.bottom-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: none;
+}
+
+.bottom-table td {
+    border: none;
+    padding: 0;
+    vertical-align: top;
+}
+
+.payment-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748B;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+}
+
+.payment-details {
+    font-size: 12px;
+    color: #475569;
+    line-height: 1.6;
+}
+
+.summary-table {
+    width: 250px;
+    margin-left: auto;
+    border-collapse: collapse;
+}
+
+.summary-table td {
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #475569;
+}
+
+.summary-total {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0F172A;
+    border-top: 1px solid #E2E8F0;
+    padding-top: 10px;
+}
+
+.footer-section {
+    width: 100%;
+    margin-top: 50px;
+    border-top: 1px dashed #E2E8F0;
+    padding-top: 35px;
+}
+
+.footer-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: none;
+}
+
+.footer-table td {
+    border: none;
+    padding: 0;
+    vertical-align: bottom;
+}
+
+.thank-you {
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+    font-style: italic;
+}
+
+.signature-block {
+    text-align: center;
+    width: 180px;
+}
+
+.signature-line {
+    border-bottom: 1px solid #94A3B8;
+    margin-top: 10px;
+    margin-bottom: 6px;
+}
+
+.signature-label {
+    font-size: 11px;
+    color: #64748B;
+    font-weight: 500;
 }
 
 </style>
 </head>
 <body>
 <div class="invoice-container">
-<section  class="header">
-        <div>
-          ${company?.logo ? `<img src=${company?.logo} />` : `<h2>___</h2>`}
-        </div>
-        <div class="receipt-id" style="margin-top: -120px 0 40px 0">
-            
-        </div>
-</section>
-<section class="address">
-
-      <div>
-          <p class="title">From:</p>
-          <h4 style="font-size: 9px; line-height: 5px">${company.businessName ? company.businessName : company.name}</h4>
-          <p style="font-size: 9px; line-height: 5px">${company.email}</p>
-          <p style="font-size: 9px; line-height: 5px">${company.phoneNumber}</p>
-          <p style="font-size: 9px; line-height: 5px">${company.contactAddress}</p>
-      </div>
-
-      <div style="margin-bottom: 100px; margin-top: 20px">
-      <p class="title">Bill to:</p>
-        <h4 style="font-size: 9px; line-height: 5px">${name}</h4>
-        <p style="font-size: 9px; line-height: 5px">${email}</p>
-        <p style="font-size: 9px; line-height: 5px">${phone}</p>
-        <p style="font-size: 9px; line-height: 5px">${address}</p>
-      </div>
-
-    <div class="status" style="margin-top: -280px">
-        <h1 style="font-size: 12px">${Number(balanceDue) <= 0 ? 'Receipt' : type}</h1>
-        <p style="font-size: 8px; margin-bottom: 10px">${id}</p>
-        <p class="title" style="font-size: 8px">Status</p>
-        <h3 style="font-size: 12px">${status}</h3>
-        <p class="title" style="font-size: 8px">Date</p>
-        <p  style="font-size: 9px" >${moment(date).format('ll')}</p>
-        <p class="title"  style="font-size: 8px">Due Date</p>
-        <p  style="font-size: 9px">${moment(dueDate).format('ll')}</p>
-        <p class="title"  style="font-size: 8px">Amount</p>
-        <h3 style="font-size: 12px">${total}</h3>
+    
+    <!-- Top section -->
+    <div class="top-section">
+        <table class="top-table" style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <td style="vertical-align: middle;">
+                    ${(company && company.logo) ? `<img src="${company.logo}" style="max-height: 80px; max-width: 180px; object-fit: contain;" />` : (logoBase64 ? `<img src="${logoBase64}" style="max-height: 80px; max-width: 180px; object-fit: contain;" />` : `<div style="font-size: 16px; font-weight: 700; color: #0F766E;">AL HUDA</div>`)}
+                </td>
+                <td style="text-align: right; vertical-align: middle;">
+                    <h1 class="invoice-title">${type}</h1>
+                </td>
+            </tr>
+        </table>
     </div>
-</section>
 
-<table>
-  <tr>
-    <th style="font-size: 9px">Item</th>
-    <th style="font-size: 9px">Quantity</th>
-    <th style="font-size: 9px">Price</th>
-    <th style="font-size: 9px">Discount(%)</th>
-    <th style="text-align: right; font-size: 9px">Amount</th>
-  </tr>
+    <!-- Details Section (Billing & Metadata) -->
+    <div class="billing-section" style="border-top: 2px solid #F1F5F9; padding-top: 20px;">
+        <table class="billing-table" style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <td style="width: 60%; vertical-align: top;">
+                    <!-- Billed To -->
+                    <div class="billing-title" style="margin-bottom: 6px;">BILLED TO:</div>
+                    <h2 class="client-name" style="font-size: 16px; font-weight: 700; margin: 0 0 4px 0; color: #0F172A;">${name}</h2>
+                    <div class="details-text" style="font-size: 12px; color: #475569; line-height: 1.5; margin-bottom: 20px;">
+                        <div>${phone}</div>
+                        <div>${email}</div>
+                        <div>${address}</div>
+                    </div>
 
-  ${
-   items.map((item) => (
- `  <tr>
-    <td style="font-size: 9px">${item.itemName}</td>
-    <td style="font-size: 9px">${item.quantity}</td>
-    <td style="font-size: 9px">${item.unitPrice}</td>
-    <td style="font-size: 9px">${item.discount}</td>
-    <td style="text-align: right; font-size: 9px">${(item.quantity * item.unitPrice) - (item.quantity * item.unitPrice) * item.discount / 100}</td>
-  </tr>`
-   ))
-  }
+                    <!-- From -->
+                    <div class="billing-title" style="margin-bottom: 6px;">FROM:</div>
+                    <h2 class="company-name" style="font-size: 16px; font-weight: 700; margin: 0 0 4px 0; color: #0F766E;">AL Huda</h2>
+                    <div class="details-text" style="font-size: 12px; color: #475569; line-height: 1.5;">
+                        <div>${companyEmail}</div>
+                        <div>${companyPhone}</div>
+                        <div>${companyAddress}</div>
+                    </div>
+                </td>
+                <td style="width: 40%; text-align: right; vertical-align: top;">
+                    <div class="meta-info" style="font-size: 13px; color: #475569; line-height: 1.6; display: inline-block; text-align: left;">
+                        <div style="margin-bottom: 4px;"><strong>Invoice No.</strong> <span style="font-weight: 700; color: #0F172A; margin-left: 8px;">${id}</span></div>
+                        <div style="margin-bottom: 4px;"><strong>Date:</strong> <span style="font-weight: 600; color: #0F172A; margin-left: 8px;">${moment(date).format('DD MMMM YYYY')}</span></div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
 
+    <!-- Items table -->
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th style="width: 45%;">Item Description</th>
+                <th style="width: 12%; text-align: right;">Qty</th>
+                <th style="width: 15%; text-align: right;">Price</th>
+                <th style="width: 12%; text-align: right;">Tax(%)</th>
+                <th style="width: 16%; text-align: right;">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${items.map((item) => {
+                const itemAmount = (Number(item.quantity) * Number(item.unitPrice)) + ((Number(item.quantity) * Number(item.unitPrice) * Number(item.discount || 0)) / 100);
+                return `
+                <tr>
+                    <td>${item.itemName}</td>
+                    <td style="text-align: right;">${item.quantity}</td>
+                    <td style="text-align: right;">${currencySymbol} ${Number(item.unitPrice).toFixed(2)}</td>
+                    <td style="text-align: right;">${item.discount || 0}%</td>
+                    <td style="text-align: right; font-weight: 600;">${currencySymbol} ${itemAmount.toFixed(2)}</td>
+                </tr>
+                `;
+            }).join('')}
+        </tbody>
+    </table>
 
-</table>
+    <!-- Bottom Layout (Payment details & Summary totals) -->
+    <div class="bottom-section">
+        <table class="bottom-table">
+            <tr>
+                <td style="width: 55%;">
+                    <div class="payment-title">PAYMENT METHOD</div>
+                    <div class="payment-details">
+                        <div><strong>Bank:</strong> ${paymentDetails?.bankName || 'Bank of Baroda'}</div>
+                        <div><strong>Account Name:</strong> ${paymentDetails?.accountName || 'Mohammed ishtiaq Ahmed Khan'}</div>
+                        <div><strong>Account No:</strong> ${paymentDetails?.accountNo || '36050100011339'}</div>
+                        ${paymentDetails?.ifscCode ? `<div><strong>IFSC Code:</strong> ${formatIfscHtml(paymentDetails.ifscCode)}</div>` : ''}
+                        ${paymentDetails?.mobile ? `<div><strong>Mobile no.</strong> ${paymentDetails.mobile}</div>` : ''}
+                        ${paymentDetails?.branch ? `<div><strong>Branch/Address:</strong> ${paymentDetails.branch}</div>` : ''}
+                    </div>
+                    ${notes ? `
+                    <div style="margin-top: 15px;">
+                        <div class="payment-title">Note:</div>
+                        <div class="payment-details" style="white-space: pre-wrap;">${notes}</div>
+                    </div>
+                    ` : ''}
+                </td>
+                <td style="width: 45%; text-align: right;">
+                    <table class="summary-table">
+                        <tr>
+                            <td style="text-align: right;">Sub Total:</td>
+                            <td style="text-align: right; font-weight: 600; width: 100px;">${currencySymbol} ${subTotal}</td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: right;">Tax / VAT:</td>
+                            <td style="text-align: right; font-weight: 600;">${currencySymbol} ${vat}</td>
+                        </tr>
+                        <tr class="summary-total">
+                            <td style="text-align: right; font-weight: 700; font-size: 14px; padding-top: 10px;">Total:</td>
+                            <td style="text-align: right; font-weight: 700; font-size: 14px; color: #0F766E; padding-top: 10px;">${currencySymbol} ${total}</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </div>
 
-<section class="summary">
-    <table>
-        <tr>
-          <th style="font-size: 9px">Invoice Summary</th>
-          <th></th>
-        </tr>
-        <tr>
-          <td style="font-size: 9px">Sub Total</td>
-          <td style="text-align: right; font-size: 9px; font-weight: 700">${subTotal}</td>
-        </tr>
+    <!-- Footer Area (Thank you & Signature) -->
+    <div class="footer-section">
+        <table class="footer-table">
+            <tr>
+                <td>
+                    <div class="thank-you">Thank you for your business!</div>
+                </td>
+                <td style="text-align: right;">
+                    <div class="signature-block" style="display: inline-block;">
+                        ${signatureBase64 ? `<img src="${signatureBase64}" style="max-height: 60px; max-width: 180px; object-fit: contain; mix-blend-mode: multiply;" />` : ''}
+                        <div class="signature-line"></div>
+                        <div class="signature-label">Authorized Signed</div>
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
 
-        <tr>
-            <td style="font-size: 10px">VAT</td>
-            <td style="text-align: right; font-size: 9px; font-weight: 700">${vat}</td>
-          </tr>
-
-        <tr>
-            <td style="font-size: 10px">Total</td>
-            <td style="text-align: right; font-size: 9px; font-weight: 700">${total}</td>
-          </tr>
-
-        <tr>
-            <td style="font-size: 10px" >Paid</td>
-            <td style="text-align: right; font-size: 9px; font-weight: 700">${totalAmountReceived}</td>
-          </tr>
-
-          <tr>
-          <td style="font-size: 9px">Balance Due</td>
-          <td style="text-align: right; font-size: 9px; font-weight: 700">${balanceDue}</td>
-        </tr>
-        
-      </table>
-  </section>
-  <div>
-      <hr>
-      <h4 style="font-size: 9px">Note</h4>
-      <p style="font-size: 9px">${notes}</p>
-  </div>
 </div>
 </body>
-</html>`
-;
+</html>
+    `;
 };
