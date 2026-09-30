@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import styles from './Clients.module.css';
-import { deleteClient } from '../../actions/clientActions';
+import { deleteClient, createClient } from '../../actions/clientActions';
 import { useSnackbar } from 'react-simple-snackbar';
 import AddClient from './AddClient';
 import moment from 'moment';
