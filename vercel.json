@@ -1,0 +1,21 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "client": {
+      "root": "client",
+      "framework": "create-react-app",
+      "buildCommand": "npm run build",
+      "outputDirectory": "build"
+    },
+    "server": {
+      "root": "server",
+      "framework": "express",
+      "buildCommand": "npm install",
+      "entrypoint": "index.js"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": { "service": "server" } },
+    { "source": "/(.*)",     "destination": { "service": "client" } }
+  ]
+}
