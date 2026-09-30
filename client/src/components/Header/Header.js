@@ -112,6 +112,13 @@ const Header = () => {
 
     return (
         <div className={styles.header}>
+            {/* Brand — left side */}
+            <div className={styles.brand}>
+                <span className={styles.brandName}>Al Huda</span>
+                <span className={styles.brandSub}>Smart Invoicing. Simplified.</span>
+            </div>
+
+            {/* Avatar / menu — right side */}
             <div className={classes.root}>
       <div>
         <Button

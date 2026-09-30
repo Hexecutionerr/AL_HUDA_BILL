@@ -14,7 +14,7 @@ const Footer = () => {
     return (
         <footer>
             <div className={styles.footerText}>
-            © Hasnain Khan  | Made with ♥ in 🇳🇬 <span><a href="https://github.com/Hexecutionerr" target="_blank" rel="noopener noreferrer">[Download source code]</a></span>
+             © 2026 Al Huda Textiles | Smart Invoicing Simplified
             </div>
             {user && (
             <FabButton />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import styles from './Invoice.module.css'
 import { useDispatch, useSelector } from 'react-redux'
 import { useParams, useHistory, useLocation } from 'react-router-dom'
@@ -24,7 +24,7 @@ import { initialState } from '../../initialState'
 import currencies from '../../currencies.json'
 import { createInvoice, getInvoice, updateInvoice } from '../../actions/invoiceActions'
 import { getClientsByUser } from '../../actions/clientActions'
-import { getProfilesByUser } from '../../actions/profile'
+import { getProfilesByUser, updateProfile } from '../../actions/profile'
 import AddClient from './AddClient'
 
 const Invoice = () => {
@@ -59,12 +59,6 @@ const Invoice = () => {
             ifscCode: 'BARB0MCKAUS',
             mobile: '9987804375',
             branch: 'Kausa branch Mumbra, Mumbai Maharashtra'
-        },
-        embd: {
-            bankName: 'Emirates NBD',
-            accountName: 'AL Huda Export Management',
-            accountNo: '0123 4567 8901',
-            branch: 'Business Bay, Dubai, UAE'
         }
     };
 
@@ -78,10 +72,49 @@ const Invoice = () => {
         branch: ''
     })
     const [openPaymentModal, setOpenPaymentModal] = useState(false)
+    const [editingMethodId, setEditingMethodId] = useState(null)  // id of saved method being edited, or null
+    const [deleteConfirmId, setDeleteConfirmId] = useState(null)   // id of saved method pending delete confirmation
+    const [showNotePopup, setShowNotePopup] = useState(false)
+    const notePopupRef = useRef(null)
+
+    const NOTE_PRESETS = [
+        'We hope you enjoy this deal!',
+        'Thank you for choosing AL-HUDA TEXTILES!',
+        'We truly appreciate your business and trust.',
+        'We look forward to serving you again.',
+        'Your satisfaction is our priority. Thank you for your continued support!',
+        'We hope you enjoy your purchase!',
+        'Thank you for your valuable business. We look forward to working with you again.',
+        'We appreciate your trust and wish you a wonderful experience with your purchase.',
+    ]
+
+    // Parse profile's paymentDetails into an array of {id, bankName, accountName, accountNo, ifscCode, mobile, branch}
+    // Handles: array format (new), single-object format (legacy migration), null/empty
+    const getSavedPaymentList = () => {
+        const profileObj = Array.isArray(profiles) ? profiles[0] : profiles;
+        if (!profileObj?.paymentDetails) return [];
+        try {
+            const parsed = JSON.parse(profileObj.paymentDetails);
+            if (Array.isArray(parsed)) {
+                // New format — filter out empty entries
+                return parsed.filter(m => m && (m.bankName || m.accountNo));
+            }
+            // Legacy single-object format — migrate to array with a stable id
+            if (typeof parsed === 'object' && parsed !== null && Object.values(parsed).some(v => v?.trim())) {
+                return [{ id: 'legacy', ...parsed }];
+            }
+        } catch (_) {}
+        return [];
+    }
 
     const getActivePaymentDetails = () => {
         if (paymentMethod === 'bob') return paymentMethodsList.bob;
-        if (paymentMethod === 'embd') return paymentMethodsList.embd;
+        if (paymentMethod.startsWith('saved_')) {
+            const targetId = paymentMethod.slice(6); // strip 'saved_'
+            const list = getSavedPaymentList();
+            const found = list.find(m => String(m.id) === targetId);
+            return found || customBankDetails;
+        }
         return customBankDetails;
     }
 
@@ -140,6 +173,17 @@ const Invoice = () => {
         // eslint-disable-next-line
     }, [dispatch])
 
+    // Close the Quick Notes popup when clicking outside
+    useEffect(() => {
+        const handleOutsideClick = (e) => {
+            if (notePopupRef.current && !notePopupRef.current.contains(e.target)) {
+                setShowNotePopup(false)
+            }
+        }
+        if (showNotePopup) document.addEventListener('mousedown', handleOutsideClick)
+        return () => document.removeEventListener('mousedown', handleOutsideClick)
+    }, [showNotePopup])
+
     useEffect(() => {
         if (invoice) {
             setRates(invoice.rates)
@@ -167,7 +211,12 @@ const Invoice = () => {
                             mobile: parts[5] || '',
                             branch: parts[6] || ''
                         });
+                    } else if (val === 'saved' || val === 'embd') {
+                        // Legacy single-saved / embd — map to first saved method if available
+                        const list = getSavedPaymentList();
+                        setPaymentMethod(list.length > 0 ? `saved_${list[0].id}` : 'bob');
                     } else {
+                        // Handles 'bob', 'saved_<id>', or any future key verbatim
                         setPaymentMethod(val);
                     }
                     setInvoiceData({ ...invoice, notes: invoice.notes.replace(/---PAYMENT_METHOD:(.*)---/, '').trim() });
@@ -293,6 +342,71 @@ const Invoice = () => {
         })
     }
 
+    const handleSaveCustomPayment = async () => {
+        if (!customBankDetails.bankName && !customBankDetails.accountNo) return;
+        const profileObj = Array.isArray(profiles) ? profiles[0] : profiles;
+        if (!profileObj?._id) return;
+
+        // Build the existing list (handles migration from legacy single-object format)
+        const existingList = getSavedPaymentList();
+
+        // Create new entry with a unique id (timestamp-based)
+        const newId = Date.now().toString();
+        const newEntry = { id: newId, ...customBankDetails };
+
+        // Append to list — never overwrite existing entries
+        const updatedList = [...existingList, newEntry];
+
+        const payload = {
+            ...profileObj,
+            paymentDetails: JSON.stringify(updatedList)
+        };
+        await dispatch(updateProfile(profileObj._id, payload, () => {}));
+        // Re-fetch profile so the new card appears immediately
+        dispatch(getProfilesByUser({ search: user?.result?._id || user?.result?.googleId }));
+        // Select the newly saved method and clear the custom form
+        setPaymentMethod(`saved_${newId}`);
+        setCustomBankDetails({ bankName: '', accountName: '', accountNo: '', ifscCode: '', mobile: '', branch: '' });
+    }
+
+    // Update an existing saved method in-place by its id (no duplicate created)
+    const handleUpdateSavedPayment = async (id) => {
+        if (!customBankDetails.bankName && !customBankDetails.accountNo) return;
+        const profileObj = Array.isArray(profiles) ? profiles[0] : profiles;
+        if (!profileObj?._id) return;
+
+        const existingList = getSavedPaymentList();
+        const updatedList = existingList.map(m =>
+            String(m.id) === String(id) ? { ...m, ...customBankDetails } : m
+        );
+
+        const payload = { ...profileObj, paymentDetails: JSON.stringify(updatedList) };
+        await dispatch(updateProfile(profileObj._id, payload, () => {}));
+        dispatch(getProfilesByUser({ search: user?.result?._id || user?.result?.googleId }));
+        setEditingMethodId(null);
+        setCustomBankDetails({ bankName: '', accountName: '', accountNo: '', ifscCode: '', mobile: '', branch: '' });
+        // Keep the same method selected so the card stays highlighted
+        setPaymentMethod(`saved_${id}`);
+    }
+
+    // Permanently delete a saved method by its id
+    const handleDeleteSavedPayment = async (id) => {
+        const profileObj = Array.isArray(profiles) ? profiles[0] : profiles;
+        if (!profileObj?._id) return;
+
+        const existingList = getSavedPaymentList();
+        const updatedList = existingList.filter(m => String(m.id) !== String(id));
+
+        const payload = { ...profileObj, paymentDetails: JSON.stringify(updatedList) };
+        await dispatch(updateProfile(profileObj._id, payload, () => {}));
+        dispatch(getProfilesByUser({ search: user?.result?._id || user?.result?.googleId }));
+        setDeleteConfirmId(null);
+        // If the deleted method was currently selected, fall back to 'bob'
+        if (paymentMethod === `saved_${id}`) {
+            setPaymentMethod('bob');
+        }
+    }
+
     const handleSubmit = async (e) => {
         e.preventDefault()
         let serializedPayment = '';
@@ -352,7 +466,7 @@ const Invoice = () => {
                     <DialogTitle style={{ backgroundColor: '#0F766E', color: 'white' }}>Select Payment Method</DialogTitle>
                     <DialogContent dividers>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            {/* Option 1: Bank of Baroda */}
+                            {/* Option 1: Bank of Baroda (hardcoded) */}
                             <div 
                                 style={{
                                     padding: '16px',
@@ -374,27 +488,126 @@ const Invoice = () => {
                                 </div>
                             </div>
 
-                            {/* Option 2: Emirates NBD */}
-                            <div 
-                                style={{
-                                    padding: '16px',
-                                    border: paymentMethod === 'embd' ? '2px solid #0F766E' : '1px solid #E2E8F0',
-                                    borderRadius: '12px',
-                                    cursor: 'pointer',
-                                    backgroundColor: paymentMethod === 'embd' ? 'rgba(15, 118, 110, 0.03)' : 'transparent',
-                                    transition: 'all 0.2s'
-                                }}
-                                onClick={() => setPaymentMethod('embd')}
-                            >
-                                <h4 style={{ margin: '0 0 8px 0', color: '#0F766E', fontSize: '15px' }}>Emirates NBD (Dubai)</h4>
-                                <div style={{ fontSize: '12px', color: '#64748B', lineHeight: '1.5' }}>
-                                    <div><strong>Beneficiary:</strong> AL Huda Export Management</div>
-                                    <div><strong>Account No:</strong> 0123 4567 8901</div>
-                                    <div><strong>Branch:</strong> Business Bay, Dubai, UAE</div>
-                                </div>
-                            </div>
+                            {/* Saved Custom Payment Methods — one card per entry, with Edit & Delete */}
+                            {getSavedPaymentList().map((method) => {
+                                const key = `saved_${method.id}`;
+                                const isSelected = paymentMethod === key;
+                                const isEditing = editingMethodId === String(method.id);
+                                return (
+                                    <div
+                                        key={key}
+                                        style={{
+                                            padding: '16px',
+                                            border: isSelected ? '2px solid #0F766E' : '1px solid #E2E8F0',
+                                            borderRadius: '12px',
+                                            backgroundColor: isSelected ? 'rgba(15, 118, 110, 0.03)' : 'transparent',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        {/* Card header row: title + Edit/Delete buttons */}
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                            <h4
+                                                style={{ margin: 0, color: '#0F766E', fontSize: '15px', cursor: 'pointer', flex: 1 }}
+                                                onClick={() => setPaymentMethod(key)}
+                                            >
+                                                {method.bankName || 'Saved Bank Account'}
+                                            </h4>
+                                            <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setEditingMethodId(String(method.id));
+                                                        setCustomBankDetails({
+                                                            bankName:    method.bankName    || '',
+                                                            accountName: method.accountName || '',
+                                                            accountNo:   method.accountNo   || '',
+                                                            ifscCode:    method.ifscCode    || '',
+                                                            mobile:      method.mobile      || '',
+                                                            branch:      method.branch      || ''
+                                                        });
+                                                        setPaymentMethod(key);
+                                                    }}
+                                                    style={{
+                                                        fontSize: '11px', padding: '3px 10px', borderRadius: '6px',
+                                                        border: '1px solid #0F766E', color: '#0F766E',
+                                                        background: 'transparent', cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    ✏️ Edit
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(String(method.id)); }}
+                                                    style={{
+                                                        fontSize: '11px', padding: '3px 10px', borderRadius: '6px',
+                                                        border: '1px solid #DC2626', color: '#DC2626',
+                                                        background: 'transparent', cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    🗑️ Delete
+                                                </button>
+                                            </div>
+                                        </div>
 
-                            {/* Option 3: Custom Details */}
+                                        {/* Details view (shown when not editing) */}
+                                        {!isEditing && (
+                                            <div
+                                                style={{ fontSize: '12px', color: '#64748B', lineHeight: '1.5', cursor: 'pointer' }}
+                                                onClick={() => setPaymentMethod(key)}
+                                            >
+                                                {method.accountName && <div><strong>Beneficiary:</strong> {method.accountName}</div>}
+                                                {method.accountNo   && <div><strong>Account No:</strong> {method.accountNo}</div>}
+                                                {method.ifscCode    && <div><strong>IFSC/SWIFT:</strong> <span style={{ fontFamily: 'Courier New, monospace', letterSpacing: '2px', fontWeight: 'bold' }}>{method.ifscCode}</span></div>}
+                                                {method.branch      && <div><strong>Branch:</strong> {method.branch}</div>}
+                                                {method.mobile      && <div><strong>Mobile no.</strong> {method.mobile}</div>}
+                                            </div>
+                                        )}
+
+                                        {/* Inline edit form (shown only for the card being edited) */}
+                                        {isEditing && (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }} onClick={e => e.stopPropagation()}>
+                                                <TextField label="Bank Name" variant="outlined" size="small" fullWidth
+                                                    value={customBankDetails.bankName}
+                                                    onChange={e => setCustomBankDetails({ ...customBankDetails, bankName: e.target.value })} />
+                                                <TextField label="Account Name" variant="outlined" size="small" fullWidth
+                                                    value={customBankDetails.accountName}
+                                                    onChange={e => setCustomBankDetails({ ...customBankDetails, accountName: e.target.value })} />
+                                                <TextField label="Account Number" variant="outlined" size="small" fullWidth
+                                                    value={customBankDetails.accountNo}
+                                                    onChange={e => setCustomBankDetails({ ...customBankDetails, accountNo: e.target.value })} />
+                                                <TextField label="IFSC / SWIFT Code" variant="outlined" size="small" fullWidth
+                                                    value={customBankDetails.ifscCode}
+                                                    onChange={e => setCustomBankDetails({ ...customBankDetails, ifscCode: e.target.value })} />
+                                                <TextField label="Mobile Number" variant="outlined" size="small" fullWidth
+                                                    value={customBankDetails.mobile}
+                                                    onChange={e => setCustomBankDetails({ ...customBankDetails, mobile: e.target.value })} />
+                                                <TextField label="Branch / Other Details" variant="outlined" size="small" fullWidth
+                                                    value={customBankDetails.branch}
+                                                    onChange={e => setCustomBankDetails({ ...customBankDetails, branch: e.target.value })} />
+                                                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                                                    <Button variant="contained" size="small"
+                                                        style={{ backgroundColor: '#0F766E', color: 'white' }}
+                                                        onClick={() => handleUpdateSavedPayment(method.id)}
+                                                    >
+                                                        💾 Save Changes
+                                                    </Button>
+                                                    <Button variant="outlined" size="small"
+                                                        style={{ color: '#64748B', borderColor: '#CBD5E1' }}
+                                                        onClick={() => {
+                                                            setEditingMethodId(null);
+                                                            setCustomBankDetails({ bankName: '', accountName: '', accountNo: '', ifscCode: '', mobile: '', branch: '' });
+                                                        }}
+                                                    >
+                                                        Cancel
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+
+                            {/* Add New: Custom Payment Details form */}
                             <div 
                                 style={{
                                     padding: '16px',
@@ -404,11 +617,11 @@ const Invoice = () => {
                                     backgroundColor: paymentMethod === 'custom' ? 'rgba(15, 118, 110, 0.03)' : 'transparent',
                                     transition: 'all 0.2s'
                                 }}
-                                onClick={() => setPaymentMethod('custom')}
+                                onClick={() => { setPaymentMethod('custom'); setEditingMethodId(null); }}
                             >
                                 <h4 style={{ margin: '0 0 8px 0', color: '#0F766E', fontSize: '15px' }}>Custom Payment Details</h4>
                                 {paymentMethod === 'custom' && (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '12px' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '12px' }} onClick={e => e.stopPropagation()}>
                                         <TextField 
                                             label="Bank Name" 
                                             variant="outlined" 
@@ -434,7 +647,7 @@ const Invoice = () => {
                                             fullWidth
                                         />
                                         <TextField 
-                                            label="IFSC Code" 
+                                            label="IFSC / SWIFT Code" 
                                             variant="outlined" 
                                             size="small" 
                                             value={customBankDetails.ifscCode}
@@ -457,6 +670,14 @@ const Invoice = () => {
                                             onChange={(e) => setCustomBankDetails({ ...customBankDetails, branch: e.target.value })}
                                             fullWidth
                                         />
+                                        <Button
+                                            variant="outlined"
+                                            size="small"
+                                            style={{ marginTop: '4px', color: '#0F766E', borderColor: '#0F766E', alignSelf: 'flex-start' }}
+                                            onClick={handleSaveCustomPayment}
+                                        >
+                                            💾 Save as Payment Method
+                                        </Button>
                                     </div>
                                 )}
                             </div>
@@ -465,6 +686,29 @@ const Invoice = () => {
                     <DialogActions>
                         <Button onClick={() => setOpenPaymentModal(false)} color="primary" variant="contained" style={{ backgroundColor: '#0F766E', color: 'white' }}>
                             Done
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+
+                {/* Delete Confirmation Dialog */}
+                <Dialog open={!!deleteConfirmId} onClose={() => setDeleteConfirmId(null)} maxWidth="xs" fullWidth>
+                    <DialogTitle style={{ backgroundColor: '#FEF2F2', color: '#DC2626' }}>Delete Payment Method</DialogTitle>
+                    <DialogContent dividers>
+                        <p style={{ margin: 0, fontSize: '14px', color: '#374151' }}>
+                            Are you sure you want to permanently delete this payment method?
+                            This action cannot be undone.
+                        </p>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setDeleteConfirmId(null)} style={{ color: '#64748B' }}>
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={() => handleDeleteSavedPayment(deleteConfirmId)}
+                            variant="contained"
+                            style={{ backgroundColor: '#DC2626', color: 'white' }}
+                        >
+                            Delete
                         </Button>
                     </DialogActions>
                 </Dialog>
@@ -691,7 +935,61 @@ const Invoice = () => {
                                         </div>
                                     </div>
                                     <div className={styles.notesBlock}>
-                                        <h4>Note:</h4>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                            <h4 style={{ margin: 0 }}>Note:</h4>
+                                            {/* Quick Notes preset popup */}
+                                            <div ref={notePopupRef} style={{ position: 'relative' }}>
+                                                <button
+                                                    type="button"
+                                                    className={styles.customerActionBtn}
+                                                    onClick={() => setShowNotePopup(p => !p)}
+                                                    style={{ fontSize: '11px', padding: '3px 10px' }}
+                                                >
+                                                    Quick Notes {showNotePopup ? '▲' : '▾'}
+                                                </button>
+                                                {showNotePopup && (
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        right: 0,
+                                                        top: 'calc(100% + 6px)',
+                                                        zIndex: 999,
+                                                        background: '#fff',
+                                                        border: '1px solid #E2E8F0',
+                                                        borderRadius: '10px',
+                                                        boxShadow: '0 8px 24px rgba(0,0,0,0.10)',
+                                                        minWidth: '280px',
+                                                        maxWidth: '340px',
+                                                        overflow: 'hidden',
+                                                    }}>
+                                                        <div style={{ padding: '8px 12px', borderBottom: '1px solid #F1F5F9', fontSize: '11px', color: '#94A3B8', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                                                            Select a preset note
+                                                        </div>
+                                                        {NOTE_PRESETS.map((preset, i) => (
+                                                            <div
+                                                                key={i}
+                                                                onClick={() => {
+                                                                    setInvoiceData({ ...invoiceData, notes: preset })
+                                                                    setShowNotePopup(false)
+                                                                }}
+                                                                style={{
+                                                                    padding: '10px 14px',
+                                                                    fontSize: '12.5px',
+                                                                    color: '#334155',
+                                                                    cursor: 'pointer',
+                                                                    borderBottom: i < NOTE_PRESETS.length - 1 ? '1px solid #F8FAFC' : 'none',
+                                                                    lineHeight: '1.4',
+                                                                    transition: 'background 0.15s',
+                                                                }}
+                                                                onMouseEnter={e => e.currentTarget.style.background = '#F0FDF4'}
+                                                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                                                            >
+                                                                {preset}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
                                         <textarea
                                             className={styles.notesTextarea}
                                             placeholder="Provide additional details or terms of service"

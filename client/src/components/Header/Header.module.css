@@ -1,12 +1,38 @@
 .header {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: space-between;
     height: 60px;
     border-bottom: 1px solid rgb(218, 218, 218);
-    margin-right: 30px;
-    /* background-color: #1976d2; */
-  }
+    padding: 0 24px 0 28px;
+    background-color: #fff;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    text-decoration: none;
+    cursor: default;
+    user-select: none;
+}
+
+.brandName {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0F766E;
+    font-family: 'Roboto', sans-serif;
+    letter-spacing: 0.03em;
+}
+
+.brandSub {
+    font-size: 11px;
+    color: #94A3B8;
+    font-family: 'Roboto', sans-serif;
+    font-style: italic;
+    margin-left: 8px;
+    letter-spacing: 0.01em;
+}
 
 
   .header2 {
