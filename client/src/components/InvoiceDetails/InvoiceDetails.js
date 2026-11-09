@@ -101,7 +101,6 @@ const InvoiceDetails = () => {
             setClient(invoice.client)
             setType(invoice.type)
             setStatus(invoice.status)
-            setSelectedDate(invoice.dueDate)
             setVat(invoice.vat)
             setCurrency(invoice.currency)
             setSubTotal(invoice.subTotal)
