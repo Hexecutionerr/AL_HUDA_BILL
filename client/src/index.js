@@ -4,6 +4,8 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
+import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
+import { initialDemoInvoices, initialDemoClients, initialDemoProfile } from './utils/initialDemoData';
 
 import { createStore, applyMiddleware, compose } from 'redux';
 import { Provider } from 'react-redux';
@@ -28,6 +30,15 @@ try {
   if (!localStorage.getItem('profile')) {
     localStorage.setItem('profile', JSON.stringify(demoUser));
   }
+  if (!localStorage.getItem('demo_invoices')) {
+    localStorage.setItem('demo_invoices', JSON.stringify(initialDemoInvoices));
+  }
+  if (!localStorage.getItem('demo_clients')) {
+    localStorage.setItem('demo_clients', JSON.stringify(initialDemoClients));
+  }
+  if (!localStorage.getItem('profileDetail')) {
+    localStorage.setItem('profileDetail', JSON.stringify(initialDemoProfile));
+  }
 } catch (e) {
   console.error("localStorage initialization error:", e);
 }
@@ -36,7 +47,9 @@ const store = createStore(reducers, compose(applyMiddleware(thunk)));
 
 ReactDOM.render(
   <Provider store={store}>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </Provider>,
   document.getElementById('root')
 );

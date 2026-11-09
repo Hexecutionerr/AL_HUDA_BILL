@@ -41,8 +41,9 @@ const Clients = ({ open, setOpen, currentId, setCurrentId, clients }) => {
   const fileInputRef = useRef(null);
 
   // Redux state for invoices
-  const { invoices } = useSelector((state) => state.invoices);
-  const isLoading = useSelector((state) => state.clients.isLoading);
+  const rawInvoices = useSelector((state) => state?.invoices?.invoices);
+  const invoices = Array.isArray(rawInvoices) ? rawInvoices : [];
+  const isLoading = useSelector((state) => state?.clients?.isLoading);
   const user = JSON.parse(localStorage.getItem('profile'));
 
   // Component local states
@@ -89,7 +90,7 @@ const Clients = ({ open, setOpen, currentId, setCurrentId, clients }) => {
 
   // Helper to map and calculate client business data
   const getClientBusinessStats = (client) => {
-    if (!invoices) return { totalOrders: 0, totalRevenue: 0, outstandingBalance: 0, lastOrderDate: null, status: 'Active' };
+    if (!Array.isArray(invoices) || !client) return { totalOrders: 0, totalRevenue: 0, outstandingBalance: 0, lastOrderDate: null, status: 'Active' };
 
     const clientInvoices = invoices.filter((inv) => {
       const invEmail = inv.client?.email?.toLowerCase()?.trim();

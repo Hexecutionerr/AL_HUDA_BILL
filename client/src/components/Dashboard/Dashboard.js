@@ -18,47 +18,49 @@ const Dashboard = () => {
     const history = useHistory()
     const dispatch = useDispatch()
     const user = JSON.parse(localStorage.getItem('profile'))
-    const { invoices, isLoading } = useSelector((state) => state?.invoices)
-    const overDue = invoices?.filter((invoice) => invoice.dueDate <= new Date().toISOString())
+    const { invoices: rawInvoices, isLoading } = useSelector((state) => state?.invoices || {})
+    const invoices = Array.isArray(rawInvoices) ? rawInvoices : []
+    const overDue = invoices.filter((invoice) => invoice?.dueDate && invoice.dueDate <= new Date().toISOString())
     const [openModal, setOpenModal] = useState(false)
     const [selectedInvoice, setSelectedInvoice] = useState(null)
 
     let paymentHistory = []
     for(let i = 0; i < invoices.length; i++) {
-        let history = []
-        if(invoices[i].paymentRecords !== undefined) {
-            history = [...paymentHistory, invoices[i].paymentRecords]
-            paymentHistory = [].concat.apply([], history);
+        const inv = invoices[i]
+        if(inv && Array.isArray(inv.paymentRecords)) {
+            paymentHistory.push(...inv.paymentRecords)
         }
     }
 
-    const sortHistoryByDate = paymentHistory.sort(function(a, b) {
-        var c = new Date(a.datePaid);
-        var d = new Date(b.datePaid);
+    const sortHistoryByDate = [...paymentHistory].sort(function(a, b) {
+        var c = new Date(a?.datePaid || 0);
+        var d = new Date(b?.datePaid || 0);
         return d - c;
     });
     
     let totalPaid = 0
     for(let i = 0; i < invoices.length; i++) {
-        if(invoices[i].totalAmountReceived !== undefined) {
-            totalPaid += invoices[i].totalAmountReceived
+        if(invoices[i] && invoices[i].totalAmountReceived !== undefined) {
+            totalPaid += Number(invoices[i].totalAmountReceived) || 0
         }
     }
 
     let totalAmount = 0
     for(let i = 0; i < invoices.length; i++) {
-        totalAmount += invoices[i].total
+        if(invoices[i] && invoices[i].total !== undefined) {
+            totalAmount += Number(invoices[i].total) || 0
+        }
     }
    
     useEffect(() => {
-        dispatch(getInvoicesByUser({search: user?.result._id || user?.result?.googleId}));
+        dispatch(getInvoicesByUser({search: user?.result?._id || user?.result?.googleId}));
         // eslint-disable-next-line
     }, [location, dispatch]);
 
-    const unpaidInvoice = invoices?.filter((invoice) => invoice.status === 'Unpaid')
-    const paid = invoices?.filter((invoice) => invoice.status === 'Paid')
-    const partial = invoices?.filter((invoice) => invoice.status === 'Partial')
-    const unpaidOrPartialInvoices = invoices?.filter((invoice) => invoice.status === 'Unpaid' || invoice.status === 'Partial')
+    const unpaidInvoice = invoices.filter((invoice) => invoice?.status === 'Unpaid')
+    const paid = invoices.filter((invoice) => invoice?.status === 'Paid')
+    const partial = invoices.filter((invoice) => invoice?.status === 'Partial')
+    const unpaidOrPartialInvoices = invoices.filter((invoice) => invoice?.status === 'Unpaid' || invoice?.status === 'Partial')
     
     if(!user) {
         history.push('/login')

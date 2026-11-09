@@ -1,39 +1,53 @@
 import { FETCH_PROFILES, CREATE_PROFILE, FETCH_PROFILES_BY_USER, UPDATE_PROFILE, DELETE_PROFILE, FETCH_PROFILE_BY_USER, START_LOADING, END_LOADING, FETCH_PROFILE } from '../actions/constants';
 
-const profilesReducer = (state = { isLoading: true, profiles: [] }, action) => {
+const initialState = { isLoading: true, profiles: [] };
+
+const profilesReducer = (state = initialState, action) => {
   switch (action.type) {
     case START_LOADING:
-      return {...state, isLoading: true }
+      return {...state, isLoading: true };
     case END_LOADING:
-      return {...state, isLoading: false }
+      return {...state, isLoading: false };
     case FETCH_PROFILES:
       return {
         ...state,
-        profiles: action.payload
-      }
+        profiles: Array.isArray(action.payload) ? action.payload : []
+      };
     case FETCH_PROFILES_BY_USER:
-      return { ...state, profiles: action.payload.data };
+      return {
+        ...state,
+        profiles: Array.isArray(action?.payload?.data)
+          ? action.payload.data
+          : (Array.isArray(action?.payload) ? action.payload : [])
+      };
       
     case FETCH_PROFILE_BY_USER:
-      return {...state, profiles: action.payload }
+      return {
+        ...state,
+        profiles: action.payload !== undefined ? action.payload : (state.profiles || [])
+      };
     case FETCH_PROFILE:
-      // localStorage.setItem('userProfile', JSON.stringify({...action.payload}))
-      return {...state, profile: action.payload }
+      return {...state, profile: action.payload };
     
-    case CREATE_PROFILE:
-      return {...state, profiles: [...state.profiles, action.payload]}
+    case CREATE_PROFILE: {
+      const current = Array.isArray(state.profiles) ? state.profiles : [];
+      return {...state, profiles: [...current, action.payload]};
+    }
     case UPDATE_PROFILE:
-      // profiles can be a single object (from FETCH_PROFILE_BY_USER) or an array
       if (Array.isArray(state.profiles)) {
-        return {...state, profiles: state.profiles.map((profile) => (profile._id === action.payload._id ? action.payload : profile))}
+        return {...state, profiles: state.profiles.map((profile) => (profile._id === action?.payload?._id ? action.payload : profile))};
       }
-      // single object case
-      return {...state, profiles: action.payload}
-    case DELETE_PROFILE:
-      return {...state, profiles: state.profiles.filter((profile) => profile._id !== action.payload)}
+      return {...state, profiles: action.payload};
+    case DELETE_PROFILE: {
+      const current = Array.isArray(state.profiles) ? state.profiles : [];
+      return {...state, profiles: current.filter((profile) => profile._id !== action.payload)};
+    }
     default:
-      return state;
+      return {
+        ...state,
+        profiles: state.profiles !== undefined ? state.profiles : []
+      };
   }
 };
 
-export default profilesReducer
+export default profilesReducer;

@@ -22,21 +22,21 @@ function App() {
     const ensureBackendProfile = async () => {
       if (user && user.result && user.result._id === "demo_admin_user_id") {
         try {
-          const { data } = await api.fetchProfilesByUser({ search: user.result._id })
-          if (!data || !data.data) {
+          const res = await api.fetchProfilesByUser({ search: user.result._id })
+          if (!res?.data || !res.data.data) {
             await api.createProfile({
-              name: "Demo Admin",
+              name: "Hasnain Khan",
               email: "demo_admin@alhudatextiles.com",
               userId: user.result._id,
-              phoneNumber: '1234567890',
-              businessName: 'Demo Business Ltd',
-              contactAddress: '123 Demo Street',
+              phoneNumber: '+91 98765 43210',
+              businessName: 'Al Huda Textiles',
+              contactAddress: 'Surat, Gujarat, India',
               logo: '',
-              website: 'www.demobusiness.com'
+              website: 'https://alhudatextiles.com'
             })
           }
-        } catch (error) {
-          console.error("Failed to ensure default backend profile:", error)
+        } catch (_) {
+          // Backend is optional/separate; local storage profile is initialized seamlessly
         }
       }
     }

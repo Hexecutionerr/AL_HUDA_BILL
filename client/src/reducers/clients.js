@@ -1,38 +1,66 @@
 
 import { ALL_CLIENTS, ADD_NEW_CLIENT, UPDATE_CLIENT, DELETE_CLIENT, FETCH_CLIENTS_BY_USER, FETCH_CLIENT, START_LOADING, END_LOADING } from '../actions/constants'
 
-const clients = (state = { isLoading: true, clients: [] }, action) => {
-    console.log("CLIENT REDUCER:", action.type, action.payload);
-    console.log("CONSTANT VALUE FETCH_CLIENTS_BY_USER:", FETCH_CLIENTS_BY_USER);
-    switch (action.type) {
-      case START_LOADING:
-        return { ...state, isLoading: true };
-      case END_LOADING:
-        return { ...state, isLoading: false };
-      case ALL_CLIENTS:
-        return {
-          ...state,
-          clients: action.payload.data,
-          currentPage: action.payload.currentPage,
-          numberOfPages: action.payload.numberOfPages,
-        };
-      case FETCH_CLIENTS_BY_USER:
-        return { ...state, clients: action.payload };
+const initialState = {
+  isLoading: true,
+  clients: []
+};
 
-      case FETCH_CLIENT:
-        return { ...state, client: action.payload.client };
-      case ADD_NEW_CLIENT:
-        return { ...state, clients: [...state.clients, action.payload] };
-      case UPDATE_CLIENT:
-        return { ...state, clients: state.clients.map((client) => (client._id === action.payload._id ? action.payload : client)) };
-      case DELETE_CLIENT:
-        return { ...state, clients: state.clients.filter((client) => client._id !== action.payload) };
-      default:
-        return state;
+const clients = (state = initialState, action) => {
+  switch (action.type) {
+    case START_LOADING:
+      return { ...state, isLoading: true };
+    case END_LOADING:
+      return { ...state, isLoading: false };
+    case ALL_CLIENTS:
+      return {
+        ...state,
+        clients: Array.isArray(action?.payload?.data)
+          ? action.payload.data
+          : (Array.isArray(action?.payload) ? action.payload : []),
+        currentPage: action?.payload?.currentPage,
+        numberOfPages: action?.payload?.numberOfPages,
+      };
+    case FETCH_CLIENTS_BY_USER: {
+      const payloadClients = Array.isArray(action.payload)
+        ? action.payload
+        : (Array.isArray(action?.payload?.data) ? action.payload.data : null);
+      return {
+        ...state,
+        clients: payloadClients !== null ? payloadClients : (Array.isArray(state.clients) ? state.clients : [])
+      };
     }
-  };
+    case FETCH_CLIENT:
+      return { ...state, client: action?.payload?.client };
+    case ADD_NEW_CLIENT: {
+      const currentClients = Array.isArray(state.clients) ? state.clients : [];
+      return { ...state, clients: [...currentClients, action.payload] };
+    }
+    case UPDATE_CLIENT: {
+      const currentClients = Array.isArray(state.clients) ? state.clients : [];
+      return {
+        ...state,
+        clients: currentClients.map((client) =>
+          client?._id === action?.payload?._id ? action.payload : client
+        )
+      };
+    }
+    case DELETE_CLIENT: {
+      const currentClients = Array.isArray(state.clients) ? state.clients : [];
+      return {
+        ...state,
+        clients: currentClients.filter((client) => client?._id !== action.payload)
+      };
+    }
+    default:
+      return {
+        ...state,
+        clients: Array.isArray(state?.clients) ? state.clients : []
+      };
+  }
+};
 
-  export default clients
+export default clients;
 
 
 

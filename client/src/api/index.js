@@ -20,6 +20,19 @@ API.interceptors.request.use((req) => {
     return req
 })
 
+API.interceptors.response.use(
+    (res) => {
+        // If the response is an HTML page (from SPA fallback rewrite), reject it as an API error
+        if (typeof res?.data === 'string' && (res.data.trim().toLowerCase().startsWith('<!doctype html') || res.data.trim().toLowerCase().startsWith('<html'))) {
+            return Promise.reject(new Error("API endpoint returned HTML (backend not connected)"));
+        }
+        return res;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
 // Invoices
 export const fetchInvoice =(id) => API.get(`/invoices/${id}`)
 export const addInvoice =( invoice ) => API.post('/invoices', invoice)

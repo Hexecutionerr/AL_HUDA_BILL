@@ -33,8 +33,9 @@ const Invoices = () => {
   const location     = useLocation();
   const history      = useHistory();
   const user         = JSON.parse(localStorage.getItem('profile'));
-  const rows         = useSelector((s) => s.invoices.invoices);
-  const isLoading    = useSelector((s) => s.invoices.isLoading);
+  const rawRows      = useSelector((s) => s?.invoices?.invoices);
+  const rows         = Array.isArray(rawRows) ? rawRows : [];
+  const isLoading    = useSelector((s) => s?.invoices?.isLoading);
   const [openSnackbar] = useSnackbar();
 
   const [search,    setSearch]    = useState('');
@@ -52,6 +53,7 @@ const Invoices = () => {
 
   // ── derived data ──
   const filtered = rows.filter((r) => {
+    if (!r) return false;
     const matchSearch =
       r.invoiceNumber?.toString().includes(search) ||
       r.client?.name?.toLowerCase().includes(search.toLowerCase());
@@ -62,9 +64,9 @@ const Invoices = () => {
   const totalPages  = Math.ceil(filtered.length / ROWS_PER_PAGE);
   const paginated   = filtered.slice(page * ROWS_PER_PAGE, page * ROWS_PER_PAGE + ROWS_PER_PAGE);
 
-  const totalAmount = rows.reduce((s, r) => s + (Number(r.total) || 0), 0);
-  const unpaidCount = rows.filter((r) => r.status === 'Unpaid').length;
-  const paidCount   = rows.filter((r) => r.status === 'Paid').length;
+  const totalAmount = rows.reduce((s, r) => s + (Number(r?.total) || 0), 0);
+  const unpaidCount = rows.filter((r) => r?.status === 'Unpaid').length;
+  const paidCount   = rows.filter((r) => r?.status === 'Paid').length;
 
   // ── handlers ──
   const handleSearchChange = (e) => { setSearch(e.target.value); setPage(0); };
