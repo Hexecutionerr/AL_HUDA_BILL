@@ -23,7 +23,7 @@ import currencies from '../../currencies.json'
 import { createInvoice, getInvoice, updateInvoice } from '../../actions/invoiceActions'
 import { getClientsByUser } from '../../actions/clientActions'
 import { getProfilesByUser, updateProfile } from '../../actions/profile'
-import { downloadInvoicePdfFromElement } from '../../utils/pdfGenerator'
+import { downloadInvoicePdf } from '../../utils/pdfGenerator'
 import * as api from '../../api/index'
 import AddClient from './AddClient'
 
@@ -340,11 +340,28 @@ const Invoice = () => {
 
         if (!downloaded) {
             try {
-                const previewEl = document.getElementById('invoice-editor-preview') || document.querySelector(`.${styles.leftColumn}`);
-                if (previewEl) {
-                    await downloadInvoicePdfFromElement(previewEl, `invoice_${invoiceData.invoiceNumber || 'bill'}.pdf`);
-                    downloaded = true;
-                }
+                await downloadInvoicePdf({
+                    name: client?.name || '',
+                    address: client?.address || '',
+                    phone: client?.phone || '',
+                    email: client?.email || '',
+                    dueDate: selectedDate,
+                    date: invoice?.createdAt || today,
+                    id: invoiceData.invoiceNumber,
+                    notes: invoiceData.notes && invoiceData.notes !== 'undefined' && invoiceData.notes !== 'null' ? invoiceData.notes : '',
+                    subTotal: toCommas(subTotal),
+                    total: toCommas(total),
+                    type: type || 'INVOICE',
+                    vat: vat,
+                    items: invoiceData.items || [],
+                    status: status,
+                    totalAmountReceived: toCommas(totalAmountReceived),
+                    balanceDue: toCommas(total - totalAmountReceived),
+                    company: profiles,
+                    currencySymbol: getCurrencySymbol(currency),
+                    paymentDetails: getActivePaymentDetails()
+                }, `invoice_${invoiceData.invoiceNumber || 'bill'}.pdf`);
+                downloaded = true;
             } catch (clientErr) {
                 console.error("Client-side PDF generation error:", clientErr);
             }

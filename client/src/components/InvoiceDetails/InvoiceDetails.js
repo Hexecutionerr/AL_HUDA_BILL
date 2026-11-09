@@ -18,7 +18,7 @@ import { saveAs } from 'file-saver';
 import * as api from '../../api/index';
 import Modal from '../Payments/Modal'
 import PaymentHistory from './PaymentHistory'
-import { downloadInvoicePdfFromElement } from '../../utils/pdfGenerator'
+import { downloadInvoicePdf } from '../../utils/pdfGenerator'
 
 const paymentMethodsList = {
     bob: {
@@ -153,34 +153,33 @@ const InvoiceDetails = () => {
                                : paymentMethod === 'embd' ? paymentMethodsList.embd 
                                : customBankDetails;
 
+    const payload = {
+        name: invoice?.client?.name || '',
+        address: invoice?.client?.address || '',
+        phone: invoice?.client?.phone || '',
+        email: invoice?.client?.email || '',
+        dueDate: invoice?.dueDate,
+        date: invoice?.createdAt,
+        id: invoice?.invoiceNumber,
+        notes: displayNotes && displayNotes !== 'undefined' && displayNotes !== 'null' ? displayNotes : '',
+        subTotal: toCommas(invoice?.subTotal),
+        total: toCommas(invoice?.total),
+        type: invoice?.type || 'INVOICE',
+        vat: invoice?.vat,
+        items: invoice?.items || [],
+        status: invoice?.status,
+        totalAmountReceived: toCommas(totalAmountReceived),
+        balanceDue: toCommas(total - totalAmountReceived),
+        company: company,
+        currencySymbol: getCurrencySymbol(invoice?.currency || 'INR'),
+        paymentDetails: activePaymentDetails
+    };
+
     let downloaded = false;
 
     // 1. Try remote backend if connected
     try {
-        const response = await api.downloadPdf(
-            {
-                name: invoice?.client?.name || '',
-                address: invoice?.client?.address || '',
-                phone: invoice?.client?.phone || '',
-                email: invoice?.client?.email || '',
-                dueDate: invoice?.dueDate,
-                date: invoice?.createdAt,
-                id: invoice?.invoiceNumber,
-                notes: displayNotes,
-                subTotal: toCommas(invoice?.subTotal),
-                total: toCommas(invoice?.total),
-                type: invoice?.type,
-                vat: invoice?.vat,
-                items: invoice?.items,
-                status: invoice?.status,
-                totalAmountReceived: toCommas(totalAmountReceived),
-                balanceDue: toCommas(total - totalAmountReceived),
-                company: company,
-                currencySymbol: getCurrencySymbol(invoice?.currency || 'INR'),
-                paymentDetails: activePaymentDetails
-            }
-        );
-
+        const response = await api.downloadPdf(payload);
         if (response && response.data && (response.data.size > 0 || response.data.length > 0)) {
             const pdfBlob = new Blob([response.data], { type: 'application/pdf' });
             saveAs(pdfBlob, `invoice_${invoice?.invoiceNumber || 'bill'}.pdf`);
@@ -190,14 +189,11 @@ const InvoiceDetails = () => {
         console.warn('Backend PDF endpoint unavailable, generating via client-side engine:', err?.message || err);
     }
 
-    // 2. Client-side PDF generation fallback (used on Vercel without separate backend)
+    // 2. Client-side PDF generation (exact 1-page A4 layout)
     if (!downloaded) {
         try {
-            const invoiceElement = document.getElementById('invoice-download-area') || document.querySelector(`.${styles.invoiceLayout}`);
-            if (invoiceElement) {
-                await downloadInvoicePdfFromElement(invoiceElement, `invoice_${invoice?.invoiceNumber || 'bill'}.pdf`);
-                downloaded = true;
-            }
+            await downloadInvoicePdf(payload, `invoice_${invoice?.invoiceNumber || 'bill'}.pdf`);
+            downloaded = true;
         } catch (clientPdfErr) {
             console.error('Client-side PDF generation error:', clientPdfErr);
         }
@@ -417,7 +413,7 @@ if(!invoice) {
                             </div>
                         </div>
 
-                        {displayNotes && (
+                        {displayNotes && displayNotes !== 'undefined' && displayNotes !== 'null' && (
                             <div className={styles.notesBlock}>
                                 <h4>Note:</h4>
                                 <p className={styles.notesText}>{displayNotes}</p>
