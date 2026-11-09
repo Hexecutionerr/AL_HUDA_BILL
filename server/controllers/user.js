@@ -3,6 +3,8 @@ import nodemailer from 'nodemailer'
 import crypto from 'crypto'
 import bcrypt from 'bcryptjs'
 import dotenv from 'dotenv'
+import User from '../models/userModel.js'
+import ProfileModel from '../models/ProfileModel.js'
 
 dotenv.config()
 const SECRET = process.env.SECRET;
@@ -11,20 +13,17 @@ const PORT =  process.env.SMTP_PORT
 const USER =  process.env.SMTP_USER
 const PASS =  process.env.SMTP_PASS
 
-import User from '../models/userModel.js'
-import ProfileModel from '../models/ProfileModel.js';
-
 
 export const signin = async (req, res)=> {
     const { email, password } = req.body //Coming from formData
 
     try {
         const existingUser = await User.findOne({ email })
-        
-        //get userprofile and append to login auth detail
-        const userProfile = await ProfileModel.findOne({ userId: existingUser?._id })
 
         if(!existingUser) return res.status(404).json({ message: "User doesn't exist" })
+        
+        //get userprofile and append to login auth detail
+        const userProfile = await ProfileModel.findOne({ userId: existingUser._id })
 
         const isPasswordCorrect  = await bcrypt.compare(password, existingUser.password)
 

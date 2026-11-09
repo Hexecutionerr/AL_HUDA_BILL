@@ -26,8 +26,8 @@ import MonetizationOnIcon from '@material-ui/icons/MonetizationOn';
 import Spinner from '../Spinner/Spinner'
 
 import ProgressButton from 'react-progress-button'
-import axios from 'axios';
 import { saveAs } from 'file-saver';
+import * as api from '../../api/index';
 import Modal from '../Payments/Modal'
 import PaymentHistory from './PaymentHistory'
 
@@ -195,8 +195,7 @@ const InvoiceDetails = () => {
                                : customBankDetails;
 
     try {
-        const response = await axios.post(
-            `${process.env.REACT_APP_API}/download-pdf`,
+        const response = await api.downloadPdf(
             {
                 name: invoice?.client?.name || '',
                 address: invoice?.client?.address || '',
@@ -217,8 +216,7 @@ const InvoiceDetails = () => {
                 company: company,
                 currencySymbol: getCurrencySymbol(invoice.currency || 'INR'),
                 paymentDetails: activePaymentDetails
-            },
-            { responseType: 'blob' }
+            }
         );
 
         // Use the blob with file-saver — filename is also set by Content-Disposition on server
@@ -241,7 +239,7 @@ const InvoiceDetails = () => {
                                : paymentMethod === 'embd' ? paymentMethodsList.embd 
                                : customBankDetails;
 
-    axios.post(`${process.env.REACT_APP_API}/send-pdf`, 
+    api.sendPdf(
     { name: invoice.client.name,
       address: invoice.client.address,
       phone: invoice.client.phone,
@@ -258,7 +256,7 @@ const InvoiceDetails = () => {
       status: invoice.status,
       totalAmountReceived: toCommas(totalAmountReceived),
       balanceDue: toCommas(total - totalAmountReceived),
-      link: `${process.env.REACT_APP_URL}/invoice/${invoice._id}`,
+      link: `${process.env.REACT_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '')}/invoice/${invoice._id}`,
       company: company,
       currencySymbol: getCurrencySymbol(invoice.currency || 'INR'),
       paymentDetails: activePaymentDetails

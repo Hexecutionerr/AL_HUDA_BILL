@@ -6,7 +6,15 @@ const SECRET = process.env.SECRET;
 
 const auth = async (req, res, next) => {
     try {
-        const token = req.headers.authorization.split(" ")[1]
+        if (!req.headers.authorization) {
+            return res.status(401).json({ message: "Unauthenticated: Missing Authorization header" });
+        }
+
+        const tokenParts = req.headers.authorization.split(" ")
+        if (tokenParts.length < 2) {
+            return res.status(401).json({ message: "Unauthenticated: Malformed Authorization header" });
+        }
+        const token = tokenParts[1]
         const isCustomAuth = token.length < 500 
 
         let decodeData;
@@ -27,7 +35,8 @@ const auth = async (req, res, next) => {
         next()
 
     } catch (error) {
-        console.log(error)
+        console.log("Auth middleware error:", error.message)
+        return res.status(401).json({ message: "Unauthenticated: Invalid or expired token" });
     }
 }
 

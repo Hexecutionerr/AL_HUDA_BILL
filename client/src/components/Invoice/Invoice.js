@@ -5,7 +5,6 @@ import { useParams, useHistory, useLocation } from 'react-router-dom'
 import moment from 'moment'
 import { toCommas } from '../../utils/utils'
 import { saveAs } from 'file-saver'
-import axios from 'axios'
 
 import IconButton from '@material-ui/core/IconButton'
 import DeleteOutlineRoundedIcon from '@material-ui/icons/DeleteOutlineRounded'
@@ -25,6 +24,7 @@ import currencies from '../../currencies.json'
 import { createInvoice, getInvoice, updateInvoice } from '../../actions/invoiceActions'
 import { getClientsByUser } from '../../actions/clientActions'
 import { getProfilesByUser, updateProfile } from '../../actions/profile'
+import * as api from '../../api/index'
 import AddClient from './AddClient'
 
 const Invoice = () => {
@@ -149,7 +149,7 @@ const Invoice = () => {
 
     const getTotalCount = async () => {
         try {
-            const response = await axios.get(`${process.env.REACT_APP_API}/invoices/count?searchQuery=${user?.result?._id}`)
+            const response = await api.getTotalCount(user?.result?._id)
             setInvoiceData(prev => ({
                 ...prev,
                 invoiceNumber: (Number(response.data) + 1).toString().padStart(3, '0')
@@ -309,7 +309,7 @@ const Invoice = () => {
             }
         }
 
-        axios.post(`${process.env.REACT_APP_API}/create-pdf`, {
+        api.createPdf({
             name: client?.name || '',
             address: client?.address || '',
             phone: client?.phone || '',
@@ -330,7 +330,7 @@ const Invoice = () => {
             currencySymbol: getCurrencySymbol(currency),
             paymentDetails: getActivePaymentDetails()
         })
-        .then(() => axios.get(`${process.env.REACT_APP_API}/fetch-pdf`, { responseType: 'blob' }))
+        .then(() => api.fetchPdf())
         .then((res) => {
             const pdfBlob = new Blob([res.data], { type: 'application/pdf' })
             saveAs(pdfBlob, `invoice_${invoiceData.invoiceNumber}.pdf`)

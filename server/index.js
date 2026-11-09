@@ -9,17 +9,16 @@ import pdf from 'html-pdf'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-
 import invoiceRoutes from './routes/invoices.js'
 import clientRoutes from './routes/clients.js'
 import userRoutes from './routes/userRoutes.js'
-
 import profile from './routes/profile.js'
 import pdfTemplate from './documents/index.js'
 // import invoiceTemplate from './documents/invoice.js'
 import emailTemplate from './documents/email.js'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 const app = express()
 dotenv.config()
@@ -28,6 +27,25 @@ app.use((express.json({ limit: "30mb", extended: true})))
 app.use((express.urlencoded({ limit: "30mb", extended: true})))
 app.use((cors()))
 
+// Ensure database connection in serverless / fluid compute environments
+app.use(async (req, res, next) => {
+    if (mongoose.connection.readyState === 0 && process.env.DB_URL) {
+        try {
+            await mongoose.connect(process.env.DB_URL, { useNewUrlParser: true, useUnifiedTopology: true });
+        } catch (err) {
+            console.error("Database connection error in middleware:", err.message);
+        }
+    }
+    next();
+});
+
+// Mount routes with /api prefix for production Vercel routing
+app.use('/api/invoices', invoiceRoutes)
+app.use('/api/clients', clientRoutes)
+app.use('/api/users', userRoutes)
+app.use('/api/profiles', profile)
+
+// Also mount at root for backward compatibility in local development
 app.use('/invoices', invoiceRoutes)
 app.use('/clients', clientRoutes)
 app.use('/users', userRoutes)
@@ -49,7 +67,7 @@ const transporter = nodemailer.createTransport({
 
 var options = { format: 'A4' };
 //SEND PDF INVOICE VIA EMAIL
-app.post('/send-pdf', (req, res) => {
+app.post(['/api/send-pdf', '/send-pdf'], (req, res) => {
     const { email, company } = req.body
 
     let htmlContent;
@@ -95,7 +113,7 @@ app.post('/send-pdf', (req, res) => {
 // npm link phantomjs-prebuilt
 
 //CREATE AND SEND PDF INVOICE
-app.post('/create-pdf', (req, res) => {
+app.post(['/api/create-pdf', '/create-pdf'], (req, res) => {
     let htmlContent;
     try {
         htmlContent = pdfTemplate(req.body);
@@ -113,7 +131,7 @@ app.post('/create-pdf', (req, res) => {
 });
 
 // DOWNLOAD PDF IN ONE REQUEST (avoids UUID filename issue in Chrome)
-app.post('/download-pdf', (req, res) => {
+app.post(['/api/download-pdf', '/download-pdf'], (req, res) => {
     let htmlContent;
     try {
         htmlContent = pdfTemplate(req.body);
@@ -135,7 +153,7 @@ app.post('/download-pdf', (req, res) => {
 });
 
 //SEND PDF INVOICE
-app.get('/fetch-pdf', (req, res) => {
+app.get(['/api/fetch-pdf', '/fetch-pdf'], (req, res) => {
      res.sendFile(`${__dirname}/invoice.pdf`)
 })
 

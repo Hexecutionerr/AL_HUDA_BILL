@@ -41,7 +41,8 @@ function App() {
       }
     }
     ensureBackendProfile()
-  }, [user])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.result?._id])
 
   return (
     <div>

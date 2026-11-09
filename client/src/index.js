@@ -14,7 +14,7 @@ if (typeof window !== 'undefined') {
   window.process = window.process || { env: { NODE_ENV: 'development' } };
 }
 
-// Initialize Demo Admin session synchronously on boot to bypass login/signup flows completely
+// Initialize Demo Admin session synchronously on boot if no existing session
 const demoUser = {
   result: {
     _id: "demo_admin_user_id",
@@ -23,7 +23,14 @@ const demoUser = {
   },
   token: "demo_token_123"
 };
-localStorage.setItem('profile', JSON.stringify(demoUser));
+
+try {
+  if (!localStorage.getItem('profile')) {
+    localStorage.setItem('profile', JSON.stringify(demoUser));
+  }
+} catch (e) {
+  console.error("localStorage initialization error:", e);
+}
 
 const store = createStore(reducers, compose(applyMiddleware(thunk)));
 

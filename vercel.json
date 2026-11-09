@@ -16,18 +16,6 @@
   },
   "rewrites": [
     { "source": "/api/(.*)", "destination": { "service": "server" } },
-    { "source": "/invoices/(.*)", "destination": { "service": "server" } },
-    { "source": "/invoices", "destination": { "service": "server" } },
-    { "source": "/clients/(.*)", "destination": { "service": "server" } },
-    { "source": "/clients", "destination": { "service": "server" } },
-    { "source": "/users/(.*)", "destination": { "service": "server" } },
-    { "source": "/users", "destination": { "service": "server" } },
-    { "source": "/profiles/(.*)", "destination": { "service": "server" } },
-    { "source": "/profiles", "destination": { "service": "server" } },
-    { "source": "/download-pdf", "destination": { "service": "server" } },
-    { "source": "/send-pdf", "destination": { "service": "server" } },
-    { "source": "/create-pdf", "destination": { "service": "server" } },
-    { "source": "/fetch-pdf", "destination": { "service": "server" } },
     { "source": "/(.*)", "destination": { "service": "client" } }
   ]
 }

@@ -14,12 +14,12 @@ import { ADD_NEW, UPDATE, DELETE, GET_INVOICE, FETCH_INVOICE_BY_USER, START_LOAD
 export const getInvoicesByUser =(searchQuery) => async (dispatch) => {
     try {
       dispatch({ type: START_LOADING })
-    const  { data: { data } } = await api.fetchInvoicesByUser(searchQuery)
+      const  { data: { data } } = await api.fetchInvoicesByUser(searchQuery)
       dispatch({ type: FETCH_INVOICE_BY_USER, payload: data });
       dispatch({ type: END_LOADING })
     } catch (error) {
       console.log(error.response)
-      
+      dispatch({ type: END_LOADING })
     }
   }
 
@@ -48,6 +48,7 @@ export const createInvoice =(invoice, history) => async (dispatch) => {
         dispatch({ type: END_LOADING })
     } catch (error) {
         console.log(error)
+        dispatch({ type: END_LOADING })
     }
 }
 
