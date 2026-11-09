@@ -100,7 +100,7 @@ const Invoice = () => {
                 return parsed.filter(m => m && (m.bankName || m.accountNo));
             }
             // Legacy single-object format — migrate to array with a stable id
-            if (typeof parsed === 'object' && parsed !== null && Object.values(parsed).some(v => v?.trim())) {
+            if (typeof parsed === 'object' && parsed !== null && Object.values(parsed).some(v => typeof v === 'string' && v.trim())) {
                 return [{ id: 'legacy', ...parsed }];
             }
         } catch (_) {}

@@ -11,19 +11,36 @@ const emptyPayment = { bankName: '', accountName: '', accountNo: '', ifscCode: '
 
 const parsePayment = (raw) => {
     if (!raw) return { ...emptyPayment };
+
+    // If already an object
+    if (typeof raw === 'object' && raw !== null) {
+        const res = { ...emptyPayment };
+        for (const [k, v] of Object.entries(raw)) {
+            res[k] = v !== null && v !== undefined ? String(v) : '';
+        }
+        return res;
+    }
+
     // Try JSON first
     try {
         const parsed = JSON.parse(raw);
-        if (typeof parsed === 'object' && parsed !== null) return { ...emptyPayment, ...parsed };
+        if (typeof parsed === 'object' && parsed !== null) {
+            const res = { ...emptyPayment };
+            for (const [k, v] of Object.entries(parsed)) {
+                res[k] = v !== null && v !== undefined ? String(v) : '';
+            }
+            return res;
+        }
     } catch (_) {}
 
     // Legacy plain-string parser via regex
+    if (typeof raw !== 'string') return { ...emptyPayment };
     const result = { ...emptyPayment };
     const str = raw;
 
     const extract = (regex) => {
         const m = str.match(regex);
-        return m ? m[1].trim() : '';
+        return m ? String(m[1]).trim() : '';
     };
 
     result.bankName    = extract(/(?:^|[\s])Bank[:\s]+(.+?)(?=\s*Account\s*Name|\s*Account\s*No|\s*IFSC|\s*Mobile|\s*Branch|$)/i);
@@ -34,7 +51,7 @@ const parsePayment = (raw) => {
     result.branch      = extract(/Branch[/\s\w]*[:\s]+(.+?)$/i);
 
     // If nothing extracted, fall back to raw as bankName
-    if (!Object.values(result).some(v => v?.trim())) result.bankName = raw;
+    if (!Object.values(result).some(v => typeof v === 'string' && v.trim())) result.bankName = raw;
 
     return result;
 };
@@ -148,7 +165,7 @@ const SettingsForm = () => {
     // ────────────────── VIEW MODE ──────────────────────────
     if (!editing) {
         const pd = parsePayment(p?.paymentDetails);
-        const hasPayment = Object.values(pd).some(v => v?.trim());
+        const hasPayment = Object.values(pd).some(v => typeof v === 'string' && v.trim());
 
         return (
             <>
