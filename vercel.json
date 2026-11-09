@@ -2,15 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "services": {
     "client": {
-      "root": "client",
-      "framework": "create-react-app",
-      "buildCommand": "npm run build",
-      "outputDirectory": "build"
+      "root": "client"
     },
     "server": {
       "root": "server",
-      "framework": "express",
-      "buildCommand": "npm install",
       "entrypoint": "index.js"
     }
   },
