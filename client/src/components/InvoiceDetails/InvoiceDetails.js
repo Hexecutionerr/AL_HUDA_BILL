@@ -153,49 +153,47 @@ const InvoiceDetails = () => {
                                : paymentMethod === 'embd' ? paymentMethodsList.embd 
                                : customBankDetails;
 
-    const payload = {
-        name: invoice?.client?.name || '',
-        address: invoice?.client?.address || '',
-        phone: invoice?.client?.phone || '',
-        email: invoice?.client?.email || '',
+    const pdfData = {
+        name: invoice?.client?.name || client?.name || '',
+        address: invoice?.client?.address || client?.address || '',
+        phone: invoice?.client?.phone || client?.phone || '',
+        email: invoice?.client?.email || client?.email || '',
         dueDate: invoice?.dueDate,
         date: invoice?.createdAt,
-        id: invoice?.invoiceNumber,
-        notes: displayNotes && displayNotes !== 'undefined' && displayNotes !== 'null' ? displayNotes : '',
-        subTotal: toCommas(invoice?.subTotal),
-        total: toCommas(invoice?.total),
-        type: invoice?.type || 'INVOICE',
-        vat: invoice?.vat,
-        items: invoice?.items || [],
-        status: invoice?.status,
+        id: invoice?.invoiceNumber || invoiceData?.invoiceNumber,
+        notes: displayNotes,
+        subTotal: toCommas(subTotal || invoice?.subTotal),
+        total: toCommas(total || invoice?.total),
+        type: type || invoice?.type || 'INVOICE',
+        vat: toCommas(vat || invoice?.vat || 0),
+        items: invoice?.items || invoiceData?.items || [],
+        status: status || invoice?.status,
         totalAmountReceived: toCommas(totalAmountReceived),
-        balanceDue: toCommas(total - totalAmountReceived),
+        balanceDue: toCommas((total || invoice?.total || 0) - totalAmountReceived),
         company: company,
-        currencySymbol: getCurrencySymbol(invoice?.currency || 'INR'),
+        currencySymbol: getCurrencySymbol(currency || invoice?.currency || 'INR'),
         paymentDetails: activePaymentDetails
     };
 
     let downloaded = false;
 
     // 1. Try remote backend if connected
-    const isBackendConfigured = Boolean(process.env.REACT_APP_API && !process.env.REACT_APP_API.startsWith('/'));
-    if (isBackendConfigured || (typeof window !== 'undefined' && window.location.hostname === 'localhost')) {
-        try {
-            const response = await api.downloadPdf(payload);
-            if (response && response.data && (response.data.size > 0 || response.data.length > 0)) {
-                const pdfBlob = new Blob([response.data], { type: 'application/pdf' });
-                saveAs(pdfBlob, `invoice_${invoice?.invoiceNumber || 'bill'}.pdf`);
-                downloaded = true;
-            }
-        } catch (err) {
-            console.warn('Backend PDF endpoint unavailable, generating via client-side engine:', err?.message || err);
+    try {
+        const response = await api.downloadPdf(pdfData);
+
+        if (response && response.data && (response.data.size > 0 || response.data.length > 0)) {
+            const pdfBlob = new Blob([response.data], { type: 'application/pdf' });
+            saveAs(pdfBlob, `invoice_${pdfData.id || 'bill'}.pdf`);
+            downloaded = true;
         }
+    } catch (err) {
+        console.warn('Backend PDF endpoint unavailable, generating via pixel-perfect client engine:', err?.message || err);
     }
 
-    // 2. Client-side PDF generation (exact 1-page A4 layout)
+    // 2. Pixel-perfect client-side PDF generation matching invoice 001 template exactly
     if (!downloaded) {
         try {
-            await downloadInvoicePdf(payload, `invoice_${invoice?.invoiceNumber || 'bill'}.pdf`);
+            await downloadInvoicePdf(pdfData);
             downloaded = true;
         } catch (clientPdfErr) {
             console.error('Client-side PDF generation error:', clientPdfErr);
@@ -416,7 +414,7 @@ if(!invoice) {
                             </div>
                         </div>
 
-                        {displayNotes && displayNotes !== 'undefined' && displayNotes !== 'null' && (
+                        {displayNotes && (
                             <div className={styles.notesBlock}>
                                 <h4>Note:</h4>
                                 <p className={styles.notesText}>{displayNotes}</p>

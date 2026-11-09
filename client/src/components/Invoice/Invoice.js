@@ -305,65 +305,44 @@ const Invoice = () => {
             }
         }
 
+        const pdfData = {
+            name: client?.name || '',
+            address: client?.address || '',
+            phone: client?.phone || '',
+            email: client?.email || '',
+            dueDate: selectedDate,
+            date: invoice?.createdAt || today,
+            id: invoiceData.invoiceNumber,
+            notes: invoiceData.notes,
+            subTotal: toCommas(subTotal),
+            total: toCommas(total),
+            type: type,
+            vat: vat,
+            items: invoiceData.items,
+            status: status,
+            totalAmountReceived: toCommas(totalAmountReceived),
+            balanceDue: toCommas(total - totalAmountReceived),
+            company: profiles,
+            currencySymbol: getCurrencySymbol(currency),
+            paymentDetails: getActivePaymentDetails()
+        };
+
         let downloaded = false;
-        const isBackendConfigured = Boolean(process.env.REACT_APP_API && !process.env.REACT_APP_API.startsWith('/'));
-        if (isBackendConfigured || (typeof window !== 'undefined' && window.location.hostname === 'localhost')) {
-            try {
-                await api.createPdf({
-                    name: client?.name || '',
-                    address: client?.address || '',
-                    phone: client?.phone || '',
-                    email: client?.email || '',
-                    dueDate: selectedDate,
-                    date: invoice?.createdAt || today,
-                    id: invoiceData.invoiceNumber,
-                    notes: invoiceData.notes,
-                    subTotal: toCommas(subTotal),
-                    total: toCommas(total),
-                    type: type,
-                    vat: vat,
-                    items: invoiceData.items,
-                    status: status,
-                    totalAmountReceived: toCommas(totalAmountReceived),
-                    balanceDue: toCommas(total - totalAmountReceived),
-                    company: profiles,
-                    currencySymbol: getCurrencySymbol(currency),
-                    paymentDetails: getActivePaymentDetails()
-                });
-                const res = await api.fetchPdf();
-                if (res && res.data) {
-                    const pdfBlob = new Blob([res.data], { type: 'application/pdf' });
-                    saveAs(pdfBlob, `invoice_${invoiceData.invoiceNumber || 'bill'}.pdf`);
-                    downloaded = true;
-                }
-            } catch (apiErr) {
-                console.warn("Backend PDF generation unavailable, generating in browser:", apiErr?.message || apiErr);
+        try {
+            await api.createPdf(pdfData);
+            const res = await api.fetchPdf();
+            if (res && res.data) {
+                const pdfBlob = new Blob([res.data], { type: 'application/pdf' });
+                saveAs(pdfBlob, `invoice_${invoiceData.invoiceNumber || 'bill'}.pdf`);
+                downloaded = true;
             }
+        } catch (apiErr) {
+            console.warn("Backend PDF generation unavailable, generating in browser:", apiErr?.message || apiErr);
         }
 
         if (!downloaded) {
             try {
-                await downloadInvoicePdf({
-                    name: client?.name || '',
-                    address: client?.address || '',
-                    phone: client?.phone || '',
-                    email: client?.email || '',
-                    dueDate: selectedDate,
-                    date: invoice?.createdAt || today,
-                    id: invoiceData.invoiceNumber,
-                    notes: invoiceData.notes && invoiceData.notes !== 'undefined' && invoiceData.notes !== 'null' ? invoiceData.notes : '',
-                    subTotal: toCommas(subTotal),
-                    total: toCommas(total),
-                    type: type || 'INVOICE',
-                    vat: vat,
-                    items: invoiceData.items || [],
-                    status: status,
-                    totalAmountReceived: toCommas(totalAmountReceived),
-                    balanceDue: toCommas(total - totalAmountReceived),
-                    company: profiles,
-                    currencySymbol: getCurrencySymbol(currency),
-                    paymentDetails: getActivePaymentDetails()
-                }, `invoice_${invoiceData.invoiceNumber || 'bill'}.pdf`);
+                await downloadInvoicePdf(pdfData);
                 downloaded = true;
             } catch (clientErr) {
                 console.error("Client-side PDF generation error:", clientErr);

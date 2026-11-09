@@ -3,3 +3,5 @@ build
 .env
 *.log
 start-client.bat
+
+.vercel
