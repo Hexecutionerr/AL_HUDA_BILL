@@ -59,12 +59,12 @@ export const downloadInvoicePdf = async (invoiceData) => {
   const printWrapper = document.createElement('div');
   printWrapper.id = 'pdf-render-wrapper';
   printWrapper.style.position = 'fixed';
-  printWrapper.style.left = '0';
+  printWrapper.style.left = '-9999px';
   printWrapper.style.top = '0';
-  printWrapper.style.width = '794px';
+  printWrapper.style.width = '750px';
   printWrapper.style.zIndex = '-9999';
   printWrapper.style.backgroundColor = '#FFFFFF';
-  printWrapper.style.opacity = '0';
+  printWrapper.style.opacity = '1';
   printWrapper.style.pointerEvents = 'none';
   printWrapper.innerHTML = htmlContent;
   document.body.appendChild(printWrapper);
@@ -74,17 +74,15 @@ export const downloadInvoicePdf = async (invoiceData) => {
   try {
     const html2pdf = await ensureHtml2Pdf();
     const opt = {
-      margin: [5, 5, 5, 5],
+      margin: [6, 6, 6, 6],
       filename: cleanFilename,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: {
         scale: 2,
         useCORS: true,
+        letterRendering: true,
         scrollY: 0,
-        scrollX: 0,
-        width: 794,
-        windowWidth: 794,
-        letterRendering: true
+        scrollX: 0
       },
       jsPDF: {
         unit: 'mm',
