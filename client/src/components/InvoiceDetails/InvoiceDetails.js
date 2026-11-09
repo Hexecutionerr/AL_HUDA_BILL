@@ -178,15 +178,18 @@ const InvoiceDetails = () => {
     let downloaded = false;
 
     // 1. Try remote backend if connected
-    try {
-        const response = await api.downloadPdf(payload);
-        if (response && response.data && (response.data.size > 0 || response.data.length > 0)) {
-            const pdfBlob = new Blob([response.data], { type: 'application/pdf' });
-            saveAs(pdfBlob, `invoice_${invoice?.invoiceNumber || 'bill'}.pdf`);
-            downloaded = true;
+    const isBackendConfigured = Boolean(process.env.REACT_APP_API && !process.env.REACT_APP_API.startsWith('/'));
+    if (isBackendConfigured || (typeof window !== 'undefined' && window.location.hostname === 'localhost')) {
+        try {
+            const response = await api.downloadPdf(payload);
+            if (response && response.data && (response.data.size > 0 || response.data.length > 0)) {
+                const pdfBlob = new Blob([response.data], { type: 'application/pdf' });
+                saveAs(pdfBlob, `invoice_${invoice?.invoiceNumber || 'bill'}.pdf`);
+                downloaded = true;
+            }
+        } catch (err) {
+            console.warn('Backend PDF endpoint unavailable, generating via client-side engine:', err?.message || err);
         }
-    } catch (err) {
-        console.warn('Backend PDF endpoint unavailable, generating via client-side engine:', err?.message || err);
     }
 
     // 2. Client-side PDF generation (exact 1-page A4 layout)

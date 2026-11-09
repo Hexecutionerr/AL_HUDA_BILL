@@ -1,14 +1,16 @@
 // Single-page PDF generator matching the exact server/documents/index.js A4 layout
 import moment from 'moment';
+import { saveAs } from 'file-saver';
 
 const loadHtml2Pdf = () => {
-  return new Promise((resolve, reject) => {
-    if (typeof window !== 'undefined' && window.html2pdf) {
-      return resolve(window.html2pdf);
-    }
+  if (typeof window !== 'undefined' && window.html2pdf) {
+    return Promise.resolve(window.html2pdf);
+  }
 
+  return new Promise((resolve, reject) => {
     const existing = document.getElementById('html2pdf-cdn-script');
     if (existing) {
+      if (window.html2pdf) return resolve(window.html2pdf);
       existing.addEventListener('load', () => resolve(window.html2pdf));
       existing.addEventListener('error', () => reject(new Error('Failed to load html2pdf from CDN')));
       return;
@@ -33,7 +35,9 @@ const loadHtml2Pdf = () => {
 const getBase64Image = async (url) => {
   try {
     const res = await fetch(url);
+    if (!res.ok) return url;
     const blob = await res.blob();
+    if (!blob.type.startsWith('image/')) return url;
     return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onloadend = () => resolve(reader.result);
@@ -234,22 +238,10 @@ export const downloadInvoicePdf = async (invoiceData, filename = 'invoice.pdf') 
       signatureSrc: signatureBase64
     });
 
-    // 3. Create a temporary container matching exact A4 dimensions
-    const container = document.createElement('div');
-    container.id = 'temp-pdf-render-container';
-    container.style.position = 'fixed';
-    container.style.left = '-9999px';
-    container.style.top = '0';
-    container.style.width = '794px'; // 210mm at 96 DPI
-    container.style.backgroundColor = '#ffffff';
-    container.style.zIndex = '-9999';
-    container.innerHTML = htmlContent;
-    document.body.appendChild(container);
-
-    // 4. Load html2pdf from CDN
+    // 3. Load html2pdf from CDN or window
     const html2pdf = await loadHtml2Pdf();
 
-    // 5. PDF generation options ensuring exactly 1 single A4 page
+    // 4. PDF generation options ensuring exactly 1 single A4 page
     const opt = {
       margin: 0,
       filename: cleanFilename,
@@ -270,12 +262,19 @@ export const downloadInvoicePdf = async (invoiceData, filename = 'invoice.pdf') 
       pagebreak: { mode: ['avoid-all'] }
     };
 
-    await html2pdf().set(opt).from(container).save();
-
-    // 6. Cleanup
-    if (document.body.contains(container)) {
-      document.body.removeChild(container);
+    // 5. Generate PDF blob and download via saveAs for universal browser support
+    try {
+      const pdfBlob = await html2pdf().set(opt).from(htmlContent).output('blob');
+      if (pdfBlob && pdfBlob.size > 0) {
+        saveAs(pdfBlob, cleanFilename);
+        return true;
+      }
+    } catch (outputErr) {
+      console.warn('html2pdf output blob failed, attempting direct save():', outputErr);
     }
+
+    // 6. Direct html2pdf save fallback
+    await html2pdf().set(opt).from(htmlContent).save();
     return true;
   } catch (err) {
     console.warn('html2pdf download error, falling back to window.print():', err);
