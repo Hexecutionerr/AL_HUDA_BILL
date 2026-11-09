@@ -9,18 +9,6 @@ import { toCommas } from '../../utils/utils'
 import styles from './InvoiceDetails.module.css'
 import moment from 'moment'
 import { useHistory } from 'react-router-dom'
-import { makeStyles } from '@material-ui/core/styles';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableContainer from '@material-ui/core/TableContainer';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
-import Paper from '@material-ui/core/Paper';
-import Typography from '@material-ui/core/Typography';
-import InputBase from '@material-ui/core/InputBase';
-import { Container, Grid } from '@material-ui/core';
-import Divider from '@material-ui/core/Divider';
 import BorderColorIcon from '@material-ui/icons/BorderColor';
 import MonetizationOnIcon from '@material-ui/icons/MonetizationOn';
 import Spinner from '../Spinner/Spinner'
@@ -77,7 +65,6 @@ const InvoiceDetails = () => {
     const [currency, setCurrency] = useState('')
     const [subTotal, setSubTotal] = useState(0)
     const [total, setTotal] = useState(0)
-    const [selectedDate, setSelectedDate] = useState(new Date());
     const [ client, setClient] = useState([])
     const [type, setType] = React.useState('')
     const [status, setStatus ] = useState('')
@@ -101,34 +88,6 @@ const InvoiceDetails = () => {
     // eslint-disable-next-line
     const [openSnackbar, closeSnackbar] = useSnackbar()
     const user = JSON.parse(localStorage.getItem('profile'))
-    
-    const useStyles = makeStyles((theme) => ({
-        root: {
-          display: 'flex',
-          '& > *': {
-            margin: theme.spacing(1),
-          },
-        },
-        large: {
-          width: theme.spacing(12),
-          height: theme.spacing(12),
-        },
-        table: {
-            minWidth: 650,
-          },
-    
-        headerContainer: {
-            // display: 'flex'
-            paddingTop: theme.spacing(1),
-            paddingLeft: theme.spacing(5),
-            paddingRight: theme.spacing(1),
-            backgroundColor: '#f2f2f2',
-            borderRadius: '10px 10px 0px 0px'
-        }
-      }));
-    
-
-    const classes = useStyles()
 
     useEffect(() => {
         dispatch(getInvoice(id));

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react'
 import styles from './Invoice.module.css'
 import { useDispatch, useSelector } from 'react-redux'
 import { useParams, useHistory, useLocation } from 'react-router-dom'
-import moment from 'moment'
 import { toCommas } from '../../utils/utils'
 import { saveAs } from 'file-saver'
 
@@ -245,10 +244,6 @@ const Invoice = () => {
     const clientsProps = {
         options: clients || [],
         getOptionLabel: (option) => option ? option.name : ''
-    }
-
-    const handleDateChange = (date) => {
-        setSelectedDate(date)
     }
 
     const handleRates = (e) => {

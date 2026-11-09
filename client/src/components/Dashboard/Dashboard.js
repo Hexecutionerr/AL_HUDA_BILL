@@ -5,7 +5,6 @@ import { useHistory, useLocation } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import { getInvoicesByUser } from '../../actions/invoiceActions'
 import Empty from '../svgIcons/Empty'
-import Chart from './Chart'
 import moment from 'moment'
 import { Check, Pie, Bag, Card, Clock, Frown } from './Icons'
 import Spinner from '../Spinner/Spinner'
@@ -13,12 +12,6 @@ import Modal from '../Payments/Modal'
 
 const getInitials = (name = '') =>
   name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
-
-const getBadgeClass = (status, s) => {
-  if (status === 'Paid')    return s.badgePaid;
-  if (status === 'Partial') return s.badgePartial;
-  return s.badgeUnpaid;
-};
 
 const Dashboard = () => {
     const location = useLocation()

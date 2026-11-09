@@ -19,19 +19,12 @@ import ViewModuleIcon from '@material-ui/icons/ViewModule';
 import RotateLeftIcon from '@material-ui/icons/RotateLeft';
 import DeleteIcon from '@material-ui/icons/Delete';
 import EditIcon from '@material-ui/icons/Edit';
-import InfoIcon from '@material-ui/icons/Info';
-import CallIcon from '@material-ui/icons/Call';
-import EmailIcon from '@material-ui/icons/Email';
 import LanguageIcon from '@material-ui/icons/Language';
 import PaymentIcon from '@material-ui/icons/Payment';
 import ReceiptIcon from '@material-ui/icons/Receipt';
-import TimelineIcon from '@material-ui/icons/Timeline';
 import DescriptionIcon from '@material-ui/icons/Description';
 import SendIcon from '@material-ui/icons/Send';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
-import BlockIcon from '@material-ui/icons/Block';
-import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
-import ArrowDownwardIcon from '@material-ui/icons/ArrowDownward';
 import PeopleIcon from '@material-ui/icons/People';
 
 // Dialog for Confirmation
