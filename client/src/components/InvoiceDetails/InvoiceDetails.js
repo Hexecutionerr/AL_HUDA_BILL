@@ -18,6 +18,7 @@ import { saveAs } from 'file-saver';
 import * as api from '../../api/index';
 import Modal from '../Payments/Modal'
 import PaymentHistory from './PaymentHistory'
+import { downloadInvoicePdfFromElement } from '../../utils/pdfGenerator'
 
 const paymentMethodsList = {
     bob: {
@@ -152,6 +153,9 @@ const InvoiceDetails = () => {
                                : paymentMethod === 'embd' ? paymentMethodsList.embd 
                                : customBankDetails;
 
+    let downloaded = false;
+
+    // 1. Try remote backend if connected
     try {
         const response = await api.downloadPdf(
             {
@@ -159,30 +163,49 @@ const InvoiceDetails = () => {
                 address: invoice?.client?.address || '',
                 phone: invoice?.client?.phone || '',
                 email: invoice?.client?.email || '',
-                dueDate: invoice.dueDate,
-                date: invoice.createdAt,
-                id: invoice.invoiceNumber,
+                dueDate: invoice?.dueDate,
+                date: invoice?.createdAt,
+                id: invoice?.invoiceNumber,
                 notes: displayNotes,
-                subTotal: toCommas(invoice.subTotal),
-                total: toCommas(invoice.total),
-                type: invoice.type,
-                vat: invoice.vat,
-                items: invoice.items,
-                status: invoice.status,
+                subTotal: toCommas(invoice?.subTotal),
+                total: toCommas(invoice?.total),
+                type: invoice?.type,
+                vat: invoice?.vat,
+                items: invoice?.items,
+                status: invoice?.status,
                 totalAmountReceived: toCommas(totalAmountReceived),
                 balanceDue: toCommas(total - totalAmountReceived),
                 company: company,
-                currencySymbol: getCurrencySymbol(invoice.currency || 'INR'),
+                currencySymbol: getCurrencySymbol(invoice?.currency || 'INR'),
                 paymentDetails: activePaymentDetails
             }
         );
 
-        // Use the blob with file-saver — filename is also set by Content-Disposition on server
-        const pdfBlob = new Blob([response.data], { type: 'application/pdf' });
-        saveAs(pdfBlob, `invoice_${invoice.invoiceNumber}.pdf`);
-        setDownloadStatus('success');
+        if (response && response.data && (response.data.size > 0 || response.data.length > 0)) {
+            const pdfBlob = new Blob([response.data], { type: 'application/pdf' });
+            saveAs(pdfBlob, `invoice_${invoice?.invoiceNumber || 'bill'}.pdf`);
+            downloaded = true;
+        }
     } catch (err) {
-        console.error('PDF download error:', err);
+        console.warn('Backend PDF endpoint unavailable, generating via client-side engine:', err?.message || err);
+    }
+
+    // 2. Client-side PDF generation fallback (used on Vercel without separate backend)
+    if (!downloaded) {
+        try {
+            const invoiceElement = document.getElementById('invoice-download-area') || document.querySelector(`.${styles.invoiceLayout}`);
+            if (invoiceElement) {
+                await downloadInvoicePdfFromElement(invoiceElement, `invoice_${invoice?.invoiceNumber || 'bill'}.pdf`);
+                downloaded = true;
+            }
+        } catch (clientPdfErr) {
+            console.error('Client-side PDF generation error:', clientPdfErr);
+        }
+    }
+
+    if (downloaded) {
+        setDownloadStatus('success');
+    } else {
         setDownloadStatus('error');
     }
   }
@@ -290,7 +313,7 @@ if(!invoice) {
              )}
         
             <Modal open={open} setOpen={setOpen} invoice={invoice}/>
-            <div className={styles.invoiceLayout}>
+            <div id="invoice-download-area" className={styles.invoiceLayout}>
                 {/* Top Header Section */}
                 <div className={styles.invoiceHeaderRow}>
                     <div className={styles.headerLogoLeft}>

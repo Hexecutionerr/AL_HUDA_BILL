@@ -23,6 +23,7 @@ import currencies from '../../currencies.json'
 import { createInvoice, getInvoice, updateInvoice } from '../../actions/invoiceActions'
 import { getClientsByUser } from '../../actions/clientActions'
 import { getProfilesByUser, updateProfile } from '../../actions/profile'
+import { downloadInvoicePdfFromElement } from '../../utils/pdfGenerator'
 import * as api from '../../api/index'
 import AddClient from './AddClient'
 
@@ -294,7 +295,7 @@ const Invoice = () => {
         setInvoiceData((prevState) => ({ ...prevState, items: values }))
     }
 
-    const createAndDownloadPdf = () => {
+    const createAndDownloadPdf = async () => {
         setDownloadStatus('loading')
         
         let totalAmountReceived = 0
@@ -304,37 +305,56 @@ const Invoice = () => {
             }
         }
 
-        api.createPdf({
-            name: client?.name || '',
-            address: client?.address || '',
-            phone: client?.phone || '',
-            email: client?.email || '',
-            dueDate: selectedDate,
-            date: invoice?.createdAt || today,
-            id: invoiceData.invoiceNumber,
-            notes: invoiceData.notes,
-            subTotal: toCommas(subTotal),
-            total: toCommas(total),
-            type: type,
-            vat: vat,
-            items: invoiceData.items,
-            status: status,
-            totalAmountReceived: toCommas(totalAmountReceived),
-            balanceDue: toCommas(total - totalAmountReceived),
-            company: profiles,
-            currencySymbol: getCurrencySymbol(currency),
-            paymentDetails: getActivePaymentDetails()
-        })
-        .then(() => api.fetchPdf())
-        .then((res) => {
-            const pdfBlob = new Blob([res.data], { type: 'application/pdf' })
-            saveAs(pdfBlob, `invoice_${invoiceData.invoiceNumber}.pdf`)
-        })
-        .then(() => setDownloadStatus('success'))
-        .catch(err => {
-            console.error(err)
-            setDownloadStatus('error')
-        })
+        let downloaded = false;
+        try {
+            await api.createPdf({
+                name: client?.name || '',
+                address: client?.address || '',
+                phone: client?.phone || '',
+                email: client?.email || '',
+                dueDate: selectedDate,
+                date: invoice?.createdAt || today,
+                id: invoiceData.invoiceNumber,
+                notes: invoiceData.notes,
+                subTotal: toCommas(subTotal),
+                total: toCommas(total),
+                type: type,
+                vat: vat,
+                items: invoiceData.items,
+                status: status,
+                totalAmountReceived: toCommas(totalAmountReceived),
+                balanceDue: toCommas(total - totalAmountReceived),
+                company: profiles,
+                currencySymbol: getCurrencySymbol(currency),
+                paymentDetails: getActivePaymentDetails()
+            });
+            const res = await api.fetchPdf();
+            if (res && res.data) {
+                const pdfBlob = new Blob([res.data], { type: 'application/pdf' });
+                saveAs(pdfBlob, `invoice_${invoiceData.invoiceNumber || 'bill'}.pdf`);
+                downloaded = true;
+            }
+        } catch (apiErr) {
+            console.warn("Backend PDF generation unavailable, generating in browser:", apiErr?.message || apiErr);
+        }
+
+        if (!downloaded) {
+            try {
+                const previewEl = document.getElementById('invoice-editor-preview') || document.querySelector(`.${styles.leftColumn}`);
+                if (previewEl) {
+                    await downloadInvoicePdfFromElement(previewEl, `invoice_${invoiceData.invoiceNumber || 'bill'}.pdf`);
+                    downloaded = true;
+                }
+            } catch (clientErr) {
+                console.error("Client-side PDF generation error:", clientErr);
+            }
+        }
+
+        if (downloaded) {
+            setDownloadStatus('success');
+        } else {
+            setDownloadStatus('error');
+        }
     }
 
     const handleSaveCustomPayment = async () => {
@@ -712,7 +732,7 @@ const Invoice = () => {
                     {/* Left Column: Live Invoice Preview */}
                     <div className={styles.leftColumn}>
                         
-                        <div className={styles.card}>
+                        <div id="invoice-editor-preview" className={styles.card}>
                             {/* Top Meta Row                            {/* Top Header Section */}
                             <div className={styles.invoiceHeaderRow}>
                                 <div className={styles.headerLogoLeft}>

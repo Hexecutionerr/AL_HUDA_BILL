@@ -641,3 +641,22 @@ input::-webkit-inner-spin-button {
   color: #64748B;
   font-weight: 500;
 }
+
+@media print {
+  body {
+    background-color: #ffffff !important;
+  }
+  .buttons,
+  header,
+  footer,
+  nav {
+    display: none !important;
+  }
+  .invoiceLayout {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+}
