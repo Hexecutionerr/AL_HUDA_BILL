@@ -2,7 +2,8 @@
   "name": "al-huda",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "build": "echo 'Root build skipped'"
+    "build": "cd client && npm run build"
   }
 }
